@@ -136,6 +136,10 @@
       <div class="contact__grille">
         <div>
           <a class="contact__tel" href="tel:+33682377506">06 82 37 75 06</a>
+          <p class="contact__canaux">
+            <a class="bouton bouton--contour" href="tel:+33682377506">Appeler</a>
+            <a class="bouton bouton--contour" href="https://wa.me/33682377506?text=Bonjour%20Nils%2C%20je%20souhaite%20prendre%20un%20cours%20de%20golf." rel="noopener" target="_blank">Écrire sur WhatsApp</a>
+          </p>
           <p class="contact__mention" style="color:var(--encre-douce)">
             Appel ou message, du lundi au dimanche. Je réponds entre deux cours, donc
             parfois avec quelques heures de décalage.
@@ -144,7 +148,7 @@
           <ul class="coordonnees">
             <li>
               <span class="coordonnees__intitule">Téléphone et WhatsApp</span>
-              <span class="coordonnees__valeur"><a href="tel:+33682377506">06 82 37 75 06</a></span>
+              <span class="coordonnees__valeur"><a href="tel:+33682377506">06 82 37 75 06</a>, le même numéro pour les deux</span>
             </li>
             <li data-en-attente>
               <span class="coordonnees__intitule">E-mail</span>
@@ -173,14 +177,12 @@
 
         <div>
           <!--
-            ATTENTION, POINT BLOQUANT AVANT MISE EN LIGNE.
-
-            Aucun service d'envoi n'est branché sur ce formulaire. Tant que
-            ENDPOINT_FORMULAIRE reste vide en haut de assets/js/main.js, le
-            script prépare le message dans WhatsApp au lieu d'afficher une
-            fausse confirmation : la demande n'est donc jamais perdue en
-            silence, mais elle dépend d'un geste du visiteur.
-            Renseigner l'endpoint dès qu'il existe. Voir A-COMPLETER.md § 5.
+            Ce formulaire ne poste vers aucun service d'envoi : il met la
+            demande en forme et la remet à WhatsApp, que le visiteur envoie
+            lui-même. Choix assumé, expliqué en haut de assets/js/main.js.
+            Conséquence à ne pas oublier en cas de retouche : le libellé du
+            bouton et la note qui le suit doivent continuer d'annoncer
+            l'ouverture de WhatsApp, sinon l'écran surprend.
           -->
           <form class="formulaire" data-formulaire novalidate>
             <div class="champs">
@@ -197,8 +199,11 @@
               </div>
 
               <div class="champ">
-                <label for="email">E-mail <span class="champ__obligatoire">*</span></label>
-                <input type="email" id="email" name="email" autocomplete="email" required>
+                <label for="email">
+                  E-mail
+                  <span class="champ__aide">Facultatif, la réponse arrive sur WhatsApp.</span>
+                </label>
+                <input type="email" id="email" name="email" autocomplete="email">
                 <span class="champ__erreur" data-erreur role="alert"></span>
               </div>
 
@@ -269,17 +274,25 @@
             </div>
 
             <div class="formulaire__pied">
-              <button class="bouton bouton--plein bouton--large" type="submit">Envoyer ma demande</button>
+              <p class="formulaire__acheminement">
+                Le formulaire n'envoie rien tout seul : il ouvre WhatsApp avec votre
+                demande déjà rédigée. Vous relisez, vous envoyez.
+              </p>
+              <button class="bouton bouton--plein bouton--large" type="submit">Envoyer sur WhatsApp</button>
               <p class="formulaire__note">Les champs marqués d'une étoile sont obligatoires.</p>
             </div>
           </form>
 
           <div class="message-confirmation" data-confirmation role="status">
             <p>
-              <strong>Votre message est prêt.</strong>
-              Il s'ouvre dans WhatsApp et ne part qu'une fois que vous l'envoyez. Si
-              rien ne s'est ouvert, appelez directement le
-              <a href="tel:+33682377506">06 82 37 75 06</a>.
+              <strong>Votre demande est prête.</strong>
+              Elle vient de s'ouvrir dans WhatsApp et ne part qu'une fois que vous
+              appuyez sur envoyer.
+            </p>
+            <p>
+              Si rien ne s'est ouvert, votre navigateur a bloqué la fenêtre :
+              <a data-lien-whatsapp href="https://wa.me/33682377506" rel="noopener" target="_blank">ouvrir la conversation</a>,
+              ou appelez le <a href="tel:+33682377506">06 82 37 75 06</a>.
             </p>
           </div>
         </div>

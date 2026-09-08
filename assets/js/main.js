@@ -19,18 +19,21 @@
   var MASQUER_A_CONFIRMER = true;
 
   /* ------------------------------------------------------------------------
-     Destination du formulaire de réservation.
+     Destination du formulaire de réservation : WhatsApp, et rien d'autre.
 
-     Tant que cette valeur est vide, aucun service d'envoi n'est branché : le
-     formulaire ne poste nulle part. Plutôt que d'afficher une fausse
-     confirmation et de perdre la demande en silence, le script prépare alors
-     le message dans WhatsApp, que le visiteur envoie lui-même. C'est un
-     dépannage honnête, pas une solution : renseigner ici l'URL du service
-     d'envoi (Formspree, Web3Forms, fonction serverless) dès qu'il existe.
-     Voir A-COMPLETER.md, section 5.
+     C'est un choix, pas un pis-aller. Nils passe ses journées sur un practice,
+     téléphone en poche : une demande qui tombe dans sa conversation WhatsApp
+     est lue entre deux cours, un e-mail relayé par un service tiers attend le
+     soir. Le formulaire ne poste donc vers aucun endpoint : il met la demande
+     en forme, ouvre la conversation, le visiteur relit et envoie. Aucun
+     sous-traitant à déclarer, aucun compte à maintenir, aucune demande perdue
+     dans un dossier indésirables.
+
+     Le corollaire à garder en tête : le message ne part que si le visiteur
+     appuie sur envoyer. D'où le lien de repli sur l'écran de confirmation, au
+     cas où le bloqueur de fenêtres s'en mêle, et le numéro affiché à côté.
      ------------------------------------------------------------------------ */
-  var ENDPOINT_FORMULAIRE = "";
-  var WHATSAPP_SECOURS = "33682377506";
+  var WHATSAPP_NILS = "33682377506";
 
   function appliquerModePresentation() {
     if (!MASQUER_A_CONFIRMER) return;
@@ -147,9 +150,23 @@
     });
   }
 
+  /* Le libellé lisible d'un champ, débarrassé de l'astérisque des champs
+     obligatoires et de la phrase d'aide : sans ça, le message reçu porterait
+     « Vos disponibilités * » et la consigne destinée au visiteur. */
+  function intituleDe(champ) {
+    var etiquette = champ.form ? champ.form.querySelector('label[for="' + champ.id + '"]') : null;
+    if (!etiquette) return champ.name;
+    var copie = etiquette.cloneNode(true);
+    copie.querySelectorAll(".champ__obligatoire, .champ__aide").forEach(function (bruit) {
+      bruit.remove();
+    });
+    return copie.textContent.replace(/\s+/g, " ").trim();
+  }
+
   /* ------------------------------------------------------------------------
-     Formulaire de réservation. Validation côté client seulement : il n'y a
-     pas encore de service d'envoi branché, voir A-COMPLETER.md.
+     Formulaire de réservation. La validation est faite ici, puis la demande
+     est mise en forme et remise à WhatsApp : le formulaire ne poste nulle
+     part. Voir le commentaire de WHATSAPP_NILS, en haut de ce fichier.
      ------------------------------------------------------------------------ */
   function initFormulaires() {
     document.querySelectorAll("[data-formulaire]").forEach(function (formulaire) {
@@ -203,22 +220,23 @@
           return;
         }
 
-        if (ENDPOINT_FORMULAIRE) {
-          formulaire.submit();
-          return;
-        }
-
-        /* Pas de service d'envoi : on prépare le message dans WhatsApp.
-           La fenêtre s'ouvre pendant le clic, donc elle n'est pas bloquée. */
+        /* La demande est recopiée dans l'ordre des champs, en reprenant les
+           libellés visibles : le message reçu se lit comme la fiche remplie.
+           La fenêtre s'ouvre pendant le clic, elle n'est donc pas bloquée. */
         var lignes = [];
         formulaire.querySelectorAll("input, select, textarea").forEach(function (champ) {
-          if (champ.type === "checkbox") return;
-          var etiquette = formulaire.querySelector('label[for="' + champ.id + '"]');
-          var nom = etiquette ? etiquette.textContent.replace(/\s*\*\s*$/, "").trim() : champ.name;
-          if (champ.value) lignes.push(nom.split("\n")[0].trim() + " : " + champ.value);
+          if (champ.type === "checkbox" || !champ.value.trim()) return;
+          lignes.push(intituleDe(champ) + " : " + champ.value.trim());
         });
         var texte = "Bonjour Nils, je souhaite réserver un cours de golf.\n\n" + lignes.join("\n");
-        window.open("https://wa.me/" + WHATSAPP_SECOURS + "?text=" + encodeURIComponent(texte), "_blank", "noopener");
+        var lien = "https://wa.me/" + WHATSAPP_NILS + "?text=" + encodeURIComponent(texte);
+
+        /* Le même lien est posé sur l'écran de confirmation avant l'ouverture :
+           si la fenêtre est bloquée, la demande rédigée reste à un clic. */
+        var repli = confirmation ? confirmation.querySelector("[data-lien-whatsapp]") : null;
+        if (repli) repli.href = lien;
+
+        window.open(lien, "_blank", "noopener");
 
         formulaire.hidden = true;
         if (confirmation) {

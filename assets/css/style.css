@@ -1097,14 +1097,21 @@ a.reglure:hover .reglure__titre { color: var(--rouge-texte); }
 
 .formulaire__pied { margin-top: var(--e5); display: grid; gap: var(--e3); }
 .formulaire__note { font-family: var(--mono); font-size: var(--t-label); letter-spacing: 0.07em; text-transform: uppercase; color: var(--encre-tenue); margin: 0; }
+/* Le chemin que prend la demande, annoncé avant le bouton et non après :
+   voir arriver WhatsApp sans prévenir surprend, l'apprendre avant rassure. */
+.formulaire__acheminement { margin: 0; padding-left: var(--e3); border-left: 2px solid var(--vert-vif); color: var(--encre-douce); font-size: 0.95rem; max-width: 46ch; }
 
 .message-confirmation { display: none; border-left: 2px solid var(--vert-vif); background: var(--vert-voile); padding: var(--e4); color: var(--encre); }
 .message-confirmation.est-visible { display: block; }
+.message-confirmation p + p { margin-top: var(--e3); color: var(--encre-douce); font-size: 0.95rem; }
 
 .contact__grille { display: grid; gap: var(--e6); }
 @media (min-width: 960px) { .contact__grille { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: var(--e7); } }
 .contact__tel { display: inline-block; font-family: var(--display); font-size: clamp(1.9rem, 3.4vw, 2.6rem); font-weight: 700; letter-spacing: -0.045em; color: var(--encre); text-decoration: none; }
 .contact__tel:hover { color: var(--rouge-texte); }
+/* Les deux canaux sont posés à égalité sous le numéro : appeler ou écrire,
+   même destinataire, même téléphone. Rien qui pousse vers l'un des deux. */
+.contact__canaux { display: flex; flex-wrap: wrap; gap: 10px; margin-top: var(--e3); }
 .coordonnees { list-style: none; margin: var(--e5) 0; padding: 0; border-top: 1px solid var(--trait); }
 .coordonnees li { display: grid; grid-template-columns: 130px 1fr; gap: var(--e3); margin: 0; padding: 14px 0; border-bottom: 1px solid var(--trait); align-items: baseline; }
 .coordonnees__intitule { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre-tenue); }

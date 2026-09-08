@@ -46,10 +46,10 @@ Les deux se trouvent en haut de `assets/js/main.js`.
   un fait n'a pas encore été fourni. À `true`, ils sont masqués et les blocs qui
   seraient bancals sans leur valeur disparaissent en entier. À `false`, ils
   s'affichent, pour la relecture.
-- `ENDPOINT_FORMULAIRE` — tant que cette valeur est vide, le formulaire de
-  réservation n'est branché sur aucun service d'envoi : il prépare le message
-  dans WhatsApp plutôt que d'afficher une fausse confirmation. À renseigner
-  avant la mise en ligne.
+- `WHATSAPP_NILS` — le numéro qui reçoit les demandes. Le formulaire de
+  réservation ne poste vers aucun service d'envoi : il met la demande en forme
+  et ouvre la conversation WhatsApp, que le visiteur envoie lui-même. Changer
+  ce numéro suffit à changer de destinataire.
 
 ## Mise en ligne
 
