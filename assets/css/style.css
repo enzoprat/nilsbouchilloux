@@ -1,0 +1,1185 @@
+/* ==========================================================================
+   Nils Bouchilloux — système visuel « carnet de parcours »
+
+   Le raisonnement de direction artistique, écrit ici pour que personne ne
+   le défasse par inadvertance.
+
+   Les sites de golf se ressemblent tous : vert émeraude, photo de green au
+   coucher de soleil, serif distingué, club-house. C'est la brochure de
+   resort. Elle vend un lieu. Nils ne vend pas un lieu : il se déplace sur
+   trois sites et il vend une méthode fondée sur la mesure.
+
+   Or le golf est le seul sport grand public entièrement bâti sur des
+   nombres écrits à la main : la carte de score, l'index, le carnet de
+   parcours, les distances plantées dans le fairway, et aujourd'hui les
+   données du radar. C'est ce vocabulaire-là qui sert de langage visuel.
+
+   Conséquences concrètes, appliquées partout :
+   - le papier d'une carte de score comme fond dominant, pas le blanc ;
+   - des filets d'un pixel au lieu de cartes à ombre portée ;
+   - des chiffres en chasse fixe tabulaire, traités comme des données ;
+   - des repères de distance en guise de numérotation de section ;
+   - des tracés de greens dessinés en SVG plutôt que des photos absentes ;
+   - le rouge du piquet de départ arrière comme unique accent.
+
+   La police est la pile système. Sur Apple c'est SF Pro, ailleurs Segoe.
+   Aucun fichier à télécharger : la personnalité vient de la composition,
+   des graisses et de l'interlettrage, pas d'une police achetée.
+   ========================================================================== */
+
+/* L'attribut hidden doit l'emporter sur les display des composants, sinon
+   une ligne en grid ou un item en flex resterait visible. */
+[hidden] { display: none !important; }
+
+/* --------------------------------------------------------------------------
+   1. Variables
+   -------------------------------------------------------------------------- */
+:root {
+  /* Papiers. Le fond dominant est un papier légèrement jauni, celui d'une
+     carte de score qui a passé la journée dans une poche. Pas du blanc. */
+  --papier: #F1EEE4;
+  --papier-clair: #FAF8F2;
+  --papier-creux: #E7E2D3;
+  --sable: #DFD2AE;
+  --sable-voile: #EFE7D2;
+
+  /* Encres. Un noir à reflet vert, jamais un gris neutre. */
+  --encre: #12160F;
+  --encre-douce: #4C5449;
+  --encre-tenue: #7C8577;
+
+  /* Le parcours. Fonds profonds des moments forts. */
+  --vert-nuit: #0C1F16;
+  --vert: #16412E;
+  --vert-surface: #1E5239;
+
+  /* Verts de travail */
+  --vert-vif: #2C7F55;
+  --vert-fonce: #1F6041;
+  --vert-clair: #86C7A2;
+  --vert-voile: #E3EDE5;
+
+  /* Rouge du piquet de départ arrière. Unique accent chaud. Il numérote,
+     il souligne, il ne remplit jamais un aplat. */
+  --rouge: #C43D28;
+  --rouge-texte: #A5301D;
+  --rouge-voile: #F6E2DC;
+
+  /* Filets. Le séparateur principal du site, à la place des bordures de
+     cartes et des ombres portées. */
+  --trait: rgba(18, 22, 15, 0.14);
+  --trait-fort: rgba(18, 22, 15, 0.28);
+  --trait-clair: rgba(241, 238, 228, 0.18);
+  --trait-clair-fort: rgba(241, 238, 228, 0.34);
+
+  /* Sur fond sombre */
+  --sur-vert: #EFEFE6;
+  --sur-vert-doux: rgba(239, 239, 230, 0.74);
+  --sur-vert-tenu: rgba(239, 239, 230, 0.48);
+
+  /* Typographie. Pile système : SF Pro sur Apple, Segoe UI sur Windows.
+     La chasse fixe porte toutes les données et tous les libellés, comme
+     sur une carte de score imprimée. */
+  --ui: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI",
+             system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "Cascadia Mono",
+          "Roboto Mono", "Courier New", monospace;
+
+  /* Échelle. Le contraste est volontairement brutal : un titre à 100 px
+     au-dessus d'un libellé à 11 px. C'est ce qui fait la composition. */
+  --t-hero: clamp(2.8rem, 6.1vw, 5.3rem);
+  --t-h1: clamp(2.3rem, 5vw, 4rem);
+  --t-h2: clamp(1.85rem, 3.5vw, 3rem);
+  --t-h3: clamp(1.05rem, 1.45vw, 1.26rem);
+  --t-chiffre: clamp(2.4rem, 4.6vw, 4rem);
+  --t-chiffre-geant: clamp(3.4rem, 8vw, 7rem);
+  --t-chapeau: clamp(1.06rem, 1.4vw, 1.24rem);
+  --t-corps: 1.0625rem;
+  --t-petit: 0.9rem;
+  --t-label: 0.6875rem;
+
+  /* Interlettrage. Les très grandes tailles se resserrent fort, les
+     libellés en chasse fixe s'écartent beaucoup. */
+  --ls-hero: -0.045em;
+  --ls-h1: -0.038em;
+  --ls-h2: -0.028em;
+  --ls-h3: -0.015em;
+  --ls-label: 0.16em;
+
+  /* Espacement, en progression régulière */
+  --e1: 4px;  --e2: 8px;  --e3: 14px; --e4: 22px;
+  --e5: 34px; --e6: 54px; --e7: 82px; --e8: 120px;
+
+  /* Rayons presque nuls. Un carnet n'a pas les coins arrondis à 16 px.
+     Seul le bouton garde la pilule, qui est la seule forme ronde du site. */
+  --r-net: 2px;
+  --r-doux: 5px;
+  --r-pill: 999px;
+
+  /* Une seule ombre, très courte, réservée à l'en-tête collée. */
+  --ombre-entete: 0 1px 0 var(--trait), 0 10px 24px -20px rgba(12, 31, 22, 0.5);
+
+  /* Rythme */
+  --largeur: 1240px;
+  --largeur-etroite: 680px;
+  --largeur-texte: 66ch;
+  --gouttiere: 20px;
+  --section-y: 62px;
+
+  --transition: 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  --transition-lente: 640ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (min-width: 768px) { :root { --gouttiere: 34px; --section-y: 92px; } }
+@media (min-width: 1180px) { :root { --gouttiere: 48px; --section-y: 118px; } }
+
+/* --------------------------------------------------------------------------
+   2. Réinitialisation
+   -------------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+body {
+  margin: 0;
+  background: var(--papier);
+  color: var(--encre);
+  font-family: var(--ui);
+  font-size: var(--t-corps);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  /* Les chiffres s'alignent en colonne partout : c'est une carte de score. */
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+img, svg, video, iframe { display: block; max-width: 100%; }
+img { height: auto; }
+
+h1, h2, h3, h4 {
+  font-family: var(--display);
+  margin: 0 0 var(--e3);
+  color: var(--encre);
+  text-wrap: balance;
+}
+h1 { font-size: var(--t-h1); font-weight: 700; letter-spacing: var(--ls-h1); line-height: 1.02; }
+h2 { font-size: var(--t-h2); font-weight: 700; letter-spacing: var(--ls-h2); line-height: 1.06; }
+h3 { font-size: var(--t-h3); font-weight: 640; letter-spacing: var(--ls-h3); line-height: 1.22; }
+
+p { margin: 0 0 var(--e4); text-wrap: pretty; }
+p:last-child { margin-bottom: 0; }
+
+a { color: var(--vert-fonce); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { color: var(--encre); }
+
+ul, ol { margin: 0 0 var(--e4); padding-left: 1.1rem; }
+li { margin-bottom: var(--e2); }
+
+strong { font-weight: 640; color: var(--encre); }
+
+:focus-visible { outline: 2px solid var(--rouge); outline-offset: 3px; border-radius: var(--r-net); }
+::selection { background: var(--sable); color: var(--encre); }
+
+/* --------------------------------------------------------------------------
+   3. Primitives de mise en page
+   -------------------------------------------------------------------------- */
+.conteneur { width: 100%; max-width: var(--largeur); margin-inline: auto; padding-inline: var(--gouttiere); }
+.conteneur--etroit { max-width: var(--largeur-etroite); }
+
+.visuellement-cache {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.saut-contenu {
+  position: absolute; left: 50%; transform: translate(-50%, -140%); z-index: 200;
+  background: var(--encre); color: var(--papier); padding: 12px 22px;
+  text-decoration: none; transition: transform var(--transition);
+}
+.saut-contenu:focus { transform: translate(-50%, 0); color: var(--papier); }
+
+/* Le libellé en chasse fixe. Il porte toutes les métadonnées du site :
+   numéros de section, unités, intitulés de colonne, distances. */
+.tech, .label {
+  font-family: var(--mono);
+  font-size: var(--t-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--encre-tenue);
+  font-weight: 500;
+}
+
+/* Le repère de distance, planté au bord du fairway. Sert de numéro de
+   section : il remplace le surtitre décoratif et il est unique au golf. */
+.repere {
+  display: inline-flex; align-items: baseline; gap: 8px;
+  font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: var(--ls-label); text-transform: uppercase;
+  color: var(--encre-tenue); margin-bottom: var(--e4);
+}
+.repere__num {
+  display: inline-block; padding: 3px 7px 2px;
+  background: var(--rouge); color: #fff;
+  font-weight: 600; letter-spacing: 0.08em;
+}
+.repere--clair { color: var(--sur-vert-tenu); }
+
+/* Marqueur de contenu, plus discret que le repère */
+.marqueur {
+  display: inline-block; padding: 4px 9px 3px;
+  border: 1px solid var(--trait-fort);
+  font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: var(--ls-label); text-transform: uppercase;
+  color: var(--encre-douce);
+}
+.marqueur--rouge { border-color: var(--rouge); color: var(--rouge-texte); }
+.marqueur--clair { border-color: var(--trait-clair-fort); color: var(--sur-vert-doux); }
+
+.lien-fleche {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-weight: 560; text-decoration: none; color: var(--vert-fonce);
+  border-bottom: 1px solid var(--trait-fort); padding-bottom: 2px;
+  transition: border-color var(--transition), color var(--transition);
+}
+.lien-fleche::after {
+  content: ""; width: 15px; height: 7px; background: currentColor;
+  clip-path: polygon(0 42%, 66% 42%, 66% 0, 100% 50%, 66% 100%, 66% 58%, 0 58%);
+  transition: transform var(--transition);
+}
+.lien-fleche:hover { color: var(--encre); border-color: var(--encre); }
+.lien-fleche:hover::after { transform: translateX(4px); }
+.section--vert .lien-fleche, .section--nuit .lien-fleche { color: var(--vert-clair); border-color: var(--trait-clair-fort); }
+.section--vert .lien-fleche:hover, .section--nuit .lien-fleche:hover { color: var(--sur-vert); border-color: var(--sur-vert); }
+
+/* Marqueur des faits non fournis. */
+.a-confirmer {
+  background: var(--rouge-voile); color: var(--rouge-texte);
+  border-bottom: 1px dashed var(--rouge); padding: 0 4px;
+  font-size: 0.94em;
+}
+
+/* --------------------------------------------------------------------------
+   4. Boutons. Deux formes seulement : le plein et le contour. Aucun
+      dégradé, aucune ombre, aucun bouton géant.
+   -------------------------------------------------------------------------- */
+.bouton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: var(--ui); font-size: 0.96rem; font-weight: 560; line-height: 1;
+  letter-spacing: -0.01em;
+  padding: 15px 24px; border-radius: var(--r-pill);
+  border: 1px solid transparent; text-decoration: none; cursor: pointer;
+  transition: background var(--transition), color var(--transition),
+              border-color var(--transition), transform var(--transition);
+}
+.bouton:active { transform: scale(0.985); }
+
+.bouton--plein { background: var(--encre); border-color: var(--encre); color: var(--papier-clair); }
+.bouton--plein:hover { background: var(--vert); border-color: var(--vert); color: var(--papier-clair); }
+
+.bouton--vert { background: var(--vert-vif); border-color: var(--vert-vif); color: #fff; }
+.bouton--vert:hover { background: var(--vert-fonce); border-color: var(--vert-fonce); color: #fff; }
+
+.bouton--contour { background: transparent; border-color: var(--trait-fort); color: var(--encre); }
+.bouton--contour:hover { border-color: var(--encre); background: var(--encre); color: var(--papier-clair); }
+
+.bouton--clair { background: var(--papier); border-color: var(--papier); color: var(--encre); }
+.bouton--clair:hover { background: #fff; border-color: #fff; }
+
+.bouton--contour-clair { background: transparent; border-color: var(--trait-clair-fort); color: var(--sur-vert); }
+.bouton--contour-clair:hover { background: var(--sur-vert); border-color: var(--sur-vert); color: var(--vert-nuit); }
+
+.bouton--petit { padding: 11px 17px; font-size: 0.88rem; }
+.bouton--large { width: 100%; padding: 17px 24px; }
+
+.groupe-boutons { display: flex; flex-wrap: wrap; gap: var(--e3); }
+
+/* Sur mobile, deux boutons empilés de largeurs différentes font bricolage.
+   Ils prennent toute la largeur, et la cible tactile devient franche. */
+@media (max-width: 560px) {
+  .groupe-boutons .bouton { flex: 1 1 100%; }
+  .groupe-boutons .bouton--petit { flex: 0 1 auto; }
+}
+
+/* --------------------------------------------------------------------------
+   5. En-tête. Une barre fine, un filet, aucune ombre au repos. Le logo est
+      une marque dessinée, pas un mot posé à côté d'une icône générique.
+   -------------------------------------------------------------------------- */
+.bandeau-haut {
+  background: var(--encre); color: var(--sur-vert-doux);
+  font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.bandeau-haut__ligne {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--e3); min-height: 36px; padding-block: 8px;
+}
+.bandeau-haut__infos { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.bandeau-haut__sep { color: var(--rouge); }
+.bandeau-haut__tel { color: var(--papier); text-decoration: none; white-space: nowrap; font-weight: 600; }
+.bandeau-haut__tel:hover { color: var(--vert-clair); }
+@media (max-width: 660px) { .bandeau-haut__masquable { display: none; } }
+
+.entete {
+  position: sticky; top: 0; z-index: 100;
+  background: color-mix(in srgb, var(--papier) 88%, transparent);
+  backdrop-filter: saturate(150%) blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.entete.est-collee { border-bottom-color: var(--trait); box-shadow: var(--ombre-entete); }
+.entete__ligne { display: flex; align-items: center; justify-content: space-between; gap: var(--e4); min-height: 68px; }
+
+.logo { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; color: var(--encre); flex: none; }
+.logo__marque { width: 42px; height: 42px; flex: none; object-fit: contain; }
+@media (min-width: 768px) { .logo__marque { width: 46px; height: 46px; } }
+.logo__texte { display: flex; flex-direction: column; line-height: 1.1; }
+.logo__nom { font-family: var(--display); font-weight: 680; font-size: 1.02rem; letter-spacing: -0.025em; }
+.logo__metier { font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--encre-tenue); }
+
+.nav { display: none; }
+@media (min-width: 1060px) { .nav { display: block; } }
+.nav__liste { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 0; }
+.nav__liste > li { margin: 0; }
+.nav__lien {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 13px; font-size: 0.93rem; font-weight: 500; letter-spacing: -0.01em;
+  color: var(--encre-douce); text-decoration: none; background: none; border: 0;
+  font-family: inherit; cursor: pointer; position: relative;
+  transition: color var(--transition);
+}
+.nav__lien::after {
+  content: ""; position: absolute; left: 13px; right: 13px; bottom: 4px;
+  height: 1px; background: var(--encre); transform: scaleX(0); transform-origin: left;
+  transition: transform var(--transition);
+}
+.nav__lien:hover { color: var(--encre); }
+.nav__lien:hover::after { transform: scaleX(1); }
+.nav__lien[aria-current="page"] { color: var(--encre); }
+.nav__lien[aria-current="page"]::after { transform: scaleX(1); background: var(--rouge); }
+.nav__chevron { width: 10px; height: 6px; transition: transform var(--transition); opacity: .6; }
+.nav__lien[aria-expanded="true"] .nav__chevron { transform: rotate(180deg); }
+
+.nav__item--deroulant { position: relative; }
+.sous-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; min-width: 300px;
+  background: var(--papier-clair); border: 1px solid var(--trait);
+  padding: 6px; list-style: none; margin: 0;
+  opacity: 0; visibility: hidden; transform: translateY(-4px);
+  transition: opacity var(--transition), transform var(--transition), visibility var(--transition);
+  box-shadow: 0 18px 40px -28px rgba(12, 31, 22, .6);
+}
+.sous-menu.est-ouvert { opacity: 1; visibility: visible; transform: translateY(0); }
+.sous-menu li { margin: 0; }
+.sous-menu a {
+  display: flex; align-items: baseline; gap: 10px; padding: 11px 13px;
+  font-size: 0.92rem; color: var(--encre); text-decoration: none;
+  transition: background var(--transition);
+}
+.sous-menu a:hover { background: var(--papier-creux); }
+.sous-menu .tech { flex: none; color: var(--rouge-texte); }
+
+.entete__actions { display: flex; align-items: center; gap: 9px; }
+.entete__reserver { display: none; }
+@media (min-width: 560px) { .entete__reserver { display: inline-flex; } }
+
+.burger {
+  width: 42px; height: 42px; display: grid; place-content: center; gap: 5px;
+  background: none; border: 1px solid var(--trait-fort); border-radius: var(--r-net); cursor: pointer;
+}
+@media (min-width: 1060px) { .burger { display: none; } }
+.burger span { display: block; width: 17px; height: 1.5px; background: var(--encre); transition: transform var(--transition), opacity var(--transition); }
+.burger[aria-expanded="true"] span:nth-child(2) { transform: translateY(6.5px) rotate(45deg); }
+.burger[aria-expanded="true"] span:nth-child(3) { opacity: 0; }
+.burger[aria-expanded="true"] span:nth-child(4) { transform: translateY(-6.5px) rotate(-45deg); }
+
+/* Menu mobile : une feuille pleine, pas un panneau flottant. Chaque entrée
+   est une réglure numérotée, comme les trous d'une carte de score. */
+.menu-mobile {
+  display: none; position: fixed; inset: 104px 0 0; z-index: 99;
+  background: var(--papier); overflow-y: auto;
+  padding-block: var(--e4) var(--e7);
+}
+.menu-mobile.est-ouvert { display: block; }
+@media (min-width: 1060px) { .menu-mobile { display: none !important; } }
+.menu-mobile__liste { list-style: none; margin: 0 0 var(--e5); padding: 0; border-top: 1px solid var(--trait); }
+.menu-mobile__liste > li { margin: 0; border-bottom: 1px solid var(--trait); }
+.menu-mobile__lien, .menu-mobile__declencheur {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--e3);
+  width: 100%; padding: 18px 2px; font-family: var(--display);
+  font-size: 1.32rem; font-weight: 620; letter-spacing: -0.028em; color: var(--encre);
+  text-decoration: none; background: none; border: 0; cursor: pointer; text-align: left;
+}
+.menu-mobile__num { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); color: var(--rouge); margin-right: 12px; }
+.menu-mobile__declencheur[aria-expanded="true"] .nav__chevron { transform: rotate(180deg); }
+.menu-mobile__sous { list-style: none; margin: 0 0 var(--e3); padding: 0 0 0 var(--e5); display: none; }
+.menu-mobile__sous.est-ouvert { display: block; }
+.menu-mobile__sous a { display: block; padding: 11px 0; font-size: 1rem; color: var(--encre-douce); text-decoration: none; }
+.menu-mobile__sous a:hover { color: var(--encre); }
+.menu-mobile__actions { display: grid; gap: 10px; }
+.menu-mobile__pied { margin-top: var(--e5); padding-top: var(--e4); border-top: 1px solid var(--trait); }
+
+/* --------------------------------------------------------------------------
+   6. Sections et grounds. Quatre fonds seulement, alternés pour créer le
+      rythme : papier, papier creux, sable, et le vert du parcours.
+   -------------------------------------------------------------------------- */
+.section { padding-block: var(--section-y); position: relative; }
+.section--serree { padding-block: calc(var(--section-y) * 0.58); }
+.section--papier { background: var(--papier); }
+.section--clair { background: var(--papier-clair); }
+.section--creux { background: var(--papier-creux); }
+.section--sable { background: var(--sable-voile); }
+.section--vert { background: var(--vert); color: var(--sur-vert); }
+.section--nuit { background: var(--vert-nuit); color: var(--sur-vert); }
+
+.section--vert h1, .section--vert h2, .section--vert h3,
+.section--nuit h1, .section--nuit h2, .section--nuit h3,
+.section--vert strong, .section--nuit strong { color: var(--sur-vert); }
+.section--vert .tech, .section--nuit .tech { color: var(--sur-vert-tenu); }
+.section--vert a:not(.bouton), .section--nuit a:not(.bouton) { color: var(--vert-clair); }
+
+/* Les sections sombres portent la trame des courbes de niveau d'un green.
+   C'est la signature graphique du site : personne d'autre ne l'utilise. */
+.section--vert::before, .section--nuit::before, .heros::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='420' viewBox='0 0 560 420'%3E%3Cg fill='none' stroke='%23EFEFE6' stroke-opacity='.055' stroke-width='1'%3E%3Cellipse cx='280' cy='210' rx='250' ry='170'/%3E%3Cellipse cx='276' cy='208' rx='205' ry='138'/%3E%3Cellipse cx='272' cy='206' rx='162' ry='108'/%3E%3Cellipse cx='268' cy='203' rx='120' ry='80'/%3E%3Cellipse cx='264' cy='200' rx='80' ry='53'/%3E%3Cellipse cx='260' cy='198' rx='44' ry='29'/%3E%3Cellipse cx='258' cy='196' rx='16' ry='11'/%3E%3C/g%3E%3C/svg%3E");
+  background-position: center;
+  background-size: 900px auto;
+  opacity: .9;
+}
+.section--vert > *, .section--nuit > *, .heros > * { position: relative; z-index: 1; }
+
+/* En-tête de section. Le titre à gauche, l'intro décalée : jamais centré,
+   jamais symétrique. */
+.entete-section { margin-bottom: var(--e6); }
+.entete-section h2 { margin-bottom: 0; max-width: 18ch; }
+.entete-section--large h2 { max-width: 24ch; }
+.intro-section { font-size: var(--t-chapeau); color: var(--encre-douce); line-height: 1.5; max-width: 54ch; margin-top: var(--e3); }
+.section--vert .intro-section, .section--nuit .intro-section { color: var(--sur-vert-doux); }
+
+@media (min-width: 900px) {
+  .entete-section--ligne {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.86fr);
+    gap: var(--e6); align-items: end;
+  }
+  .entete-section--ligne .intro-section { margin-top: 0; padding-bottom: 6px; }
+}
+
+/* Fil d'Ariane */
+.fil { background: var(--papier); border-bottom: 1px solid var(--trait); }
+.fil ol {
+  display: flex; flex-wrap: wrap; gap: 9px; list-style: none; margin: 0;
+  padding: 11px 0; font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--encre-tenue);
+}
+.fil li { margin: 0; display: flex; align-items: center; gap: 9px; }
+.fil li + li::before { content: "/"; color: var(--trait-fort); }
+.fil a { color: var(--encre-douce); text-decoration: none; }
+.fil a:hover { color: var(--rouge-texte); }
+
+/* --------------------------------------------------------------------------
+   7. Hero. Fond du parcours, titre très grand et très resserré, et sous le
+      titre une bande de carte de score plutôt qu'une rangée de pastilles.
+   -------------------------------------------------------------------------- */
+.heros {
+  position: relative; background: var(--vert-nuit); color: var(--sur-vert);
+  padding-top: var(--e6); overflow: hidden;
+}
+.heros__grille { display: grid; gap: var(--e5); padding-bottom: var(--e6); }
+@media (min-width: 1000px) {
+  .heros__grille { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: var(--e7); align-items: center; }
+}
+
+.heros h1 {
+  font-size: var(--t-hero); font-weight: 700; letter-spacing: var(--ls-hero);
+  line-height: 0.98; color: var(--sur-vert); margin-bottom: var(--e4); max-width: 18ch;
+}
+.heros__lieu { display: block; color: var(--vert-clair); text-wrap: balance; }
+.heros__chapeau { font-size: var(--t-chapeau); color: var(--sur-vert-doux); max-width: 50ch; margin-bottom: var(--e5); }
+.heros--page { padding-bottom: var(--e2); }
+.heros--page h1 { font-size: var(--t-h1); max-width: 17ch; }
+.heros--page .heros__grille { padding-bottom: var(--e6); }
+
+/* La bande de carte de score. Cinq colonnes séparées par des filets, des
+   chiffres tabulaires, des intitulés en chasse fixe : c'est exactement la
+   lecture d'une carte, et c'est ce qui remplace les « chiffres clés ». */
+.carte-score {
+  border-top: 1px solid var(--trait-clair-fort);
+  border-bottom: 1px solid var(--trait-clair);
+  display: grid; grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 720px) { .carte-score { grid-template-columns: repeat(4, 1fr); } }
+.carte-score__case {
+  padding: var(--e4) var(--e3) var(--e4) 0;
+  border-right: 1px solid var(--trait-clair);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.carte-score__case:last-child { border-right: 0; }
+@media (max-width: 719px) {
+  .carte-score__case:nth-child(2n) { border-right: 0; padding-left: var(--e3); }
+  .carte-score__case:nth-child(-n+2) { border-bottom: 1px solid var(--trait-clair); }
+}
+.carte-score__valeur {
+  font-family: var(--display); font-size: clamp(1.7rem, 2.6vw, 2.3rem);
+  font-weight: 660; letter-spacing: -0.035em; line-height: 1; color: var(--sur-vert);
+}
+.carte-score__valeur sup { font-size: 0.44em; font-weight: 500; margin-left: 3px; color: var(--vert-clair); vertical-align: super; }
+.carte-score__case .tech { color: var(--sur-vert-tenu); }
+
+/* Les preuves du hero, en ligne plutôt qu'en liste à puces cochées. */
+.preuves { list-style: none; margin: var(--e4) 0 0; padding: 0; display: grid; gap: 11px; }
+.preuves li {
+  margin: 0; padding-left: 22px; position: relative;
+  font-size: 0.97rem; color: var(--sur-vert-doux);
+}
+.preuves li::before {
+  content: ""; position: absolute; left: 0; top: 0.58em;
+  width: 9px; height: 1px; background: var(--rouge);
+}
+.preuves--encre li { color: var(--encre-douce); }
+
+/* --------------------------------------------------------------------------
+   8. Tracés. Les schémas dessinés remplacent les photos absentes : plan de
+      green, trajectoire, dispersion. Ils sont vectoriels, légers, et ils
+      disent quelque chose du métier, ce qu'un rectangle gris ne fait pas.
+   -------------------------------------------------------------------------- */
+.trace {
+  position: relative; border: 1px solid var(--trait-clair-fort);
+  background: rgba(239, 239, 230, 0.03); padding: var(--e4);
+}
+.trace > svg { width: 100%; height: auto; }
+.trace__legende {
+  position: absolute; left: var(--e4); bottom: var(--e4);
+  font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--sur-vert-tenu);
+}
+.trace--papier { border-color: var(--trait); background: var(--papier-clair); }
+
+/* Cadre photo : l'image occupe tout le cadre, la légende se pose dessus sur
+   un dégradé, comme une étiquette collée sur un tirage. */
+.trace--photo { padding: 0; overflow: hidden; background: var(--vert-nuit); }
+.trace--photo img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 4 / 5; }
+.trace--photo .trace__legende {
+  left: 0; right: 0; bottom: 0; padding: var(--e5) var(--e4) var(--e4);
+  background: linear-gradient(to top, rgba(12, 31, 22, 0.9) 30%, rgba(12, 31, 22, 0));
+  color: var(--sur-vert-doux);
+}
+.trace--papier.trace--photo { border-color: var(--trait); }
+.trace--papier .trace__legende { color: var(--encre-tenue); }
+
+/* Emplacement photo. Il reste explicite, mais il est composé : un cadre de
+   cadrage, une mire, une mention. Il ne ressemble plus à un bloc cassé. */
+.photo-attendue {
+  position: relative; aspect-ratio: 4 / 5;
+  display: grid; place-content: center; gap: var(--e3); text-align: center;
+  padding: var(--e5); border: 1px solid var(--trait-clair-fort);
+  background:
+    linear-gradient(var(--trait-clair) 1px, transparent 1px) 0 0 / 100% 34px,
+    linear-gradient(90deg, var(--trait-clair) 1px, transparent 1px) 0 0 / 34px 100%,
+    rgba(239, 239, 230, 0.02);
+  color: var(--sur-vert-doux);
+}
+.photo-attendue--large { aspect-ratio: 16 / 10; }
+.photo-attendue--carre { aspect-ratio: 1 / 1; }
+.photo-attendue__drapeau { width: 40px; height: 40px; margin-inline: auto; opacity: .8; }
+.photo-attendue p { font-size: 0.9rem; margin: 0; max-width: 30ch; }
+.section--papier .photo-attendue, .section--clair .photo-attendue,
+.section--creux .photo-attendue, .section--sable .photo-attendue {
+  border-color: var(--trait); color: var(--encre-douce);
+  background:
+    linear-gradient(var(--trait) 1px, transparent 1px) 0 0 / 100% 34px,
+    linear-gradient(90deg, var(--trait) 1px, transparent 1px) 0 0 / 34px 100%,
+    var(--papier-clair);
+}
+
+/* Duo générique : deux colonnes, jamais tout à fait égales, pour éviter la
+   symétrie parfaite qui fait « gabarit ». */
+.duo { display: grid; gap: var(--e5); }
+@media (min-width: 900px) {
+  .duo { grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr); gap: var(--e7); align-items: start; }
+  .duo--texte-large { grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); }
+}
+
+/* Une grille tarifaire réduite à une seule formule ne doit pas conserver
+   les trois colonnes : elle laisserait deux cases vides. */
+.grille-tarifs--seule { grid-template-columns: 1fr !important; }
+
+/* Variante d'encadré au drapeau : une mise en garde, pas une information. */
+.encadre--drapeau { border-left-color: var(--rouge); background: var(--rouge-voile); }
+.section--vert .encadre--drapeau, .section--nuit .encadre--drapeau {
+  background: rgba(196, 61, 40, 0.14); border-left-color: var(--rouge);
+}
+
+.contact__mention { color: var(--encre-douce); max-width: 44ch; }
+
+/* Duo éditorial : le texte porte, le portrait accompagne sans prendre la
+   moitié de l'écran. Les proportions sont volontairement inégales. */
+.duo-editorial { display: grid; gap: var(--e6); }
+@media (min-width: 960px) {
+  .duo-editorial { grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.72fr); gap: var(--e7); align-items: start; }
+}
+.portrait { margin: 0; }
+.portrait figcaption { display: block; margin-top: var(--e3); }
+
+/* --------------------------------------------------------------------------
+   9. La réglure. Composant central du site, à la place de la carte.
+      Une ligne de carnet : un index en chasse fixe, un titre, un texte, et
+      éventuellement une valeur alignée à droite.
+   -------------------------------------------------------------------------- */
+.reglures { border-top: 1px solid var(--trait); }
+.section--vert .reglures, .section--nuit .reglures { border-top-color: var(--trait-clair-fort); }
+
+.reglure {
+  display: grid; gap: var(--e3) var(--e5); padding-block: var(--e5);
+  border-bottom: 1px solid var(--trait); align-items: start;
+  transition: background var(--transition);
+}
+.section--vert .reglure, .section--nuit .reglure { border-bottom-color: var(--trait-clair); }
+@media (min-width: 860px) {
+  .reglure { grid-template-columns: 92px minmax(0, 0.9fr) minmax(0, 1.25fr) auto; align-items: baseline; }
+  .reglure--large { grid-template-columns: 92px minmax(0, 1fr); }
+}
+.reglure__index { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); color: var(--rouge); }
+.section--vert .reglure__index, .section--nuit .reglure__index { color: var(--vert-clair); }
+.reglure__titre { margin: 0; font-size: clamp(1.16rem, 1.8vw, 1.5rem); font-weight: 640; letter-spacing: -0.025em; }
+.reglure__texte { color: var(--encre-douce); font-size: 1rem; margin: 0; }
+.section--vert .reglure__texte, .section--nuit .reglure__texte { color: var(--sur-vert-doux); }
+.reglure__valeur {
+  font-family: var(--display); font-size: 1.3rem; font-weight: 660;
+  letter-spacing: -0.03em; white-space: nowrap;
+}
+.reglure__lien { margin-top: var(--e2); }
+
+/* Variante survolable, quand la ligne entière est cliquable */
+a.reglure { text-decoration: none; color: inherit; }
+a.reglure:hover { background: var(--papier-clair); }
+.section--vert a.reglure:hover, .section--nuit a.reglure:hover { background: rgba(239, 239, 230, 0.045); }
+a.reglure:hover .reglure__titre { color: var(--rouge-texte); }
+.section--vert a.reglure:hover .reglure__titre { color: var(--vert-clair); }
+
+/* --------------------------------------------------------------------------
+   10. Blocs de données. Un grand chiffre tabulaire, une unité, un libellé.
+   -------------------------------------------------------------------------- */
+.donnees { display: grid; gap: 1px; background: var(--trait); border: 1px solid var(--trait); }
+@media (min-width: 700px) { .donnees--3 { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 560px) { .donnees--4 { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 940px) { .donnees--4 { grid-template-columns: repeat(4, 1fr); } }
+.donnee { background: var(--papier-clair); padding: var(--e5) var(--e4); display: flex; flex-direction: column; gap: 7px; }
+.donnee__valeur {
+  font-family: var(--display); font-size: var(--t-chiffre); font-weight: 680;
+  letter-spacing: -0.045em; line-height: 0.9; color: var(--encre);
+}
+.donnee__valeur sup { font-size: 0.36em; font-weight: 500; color: var(--rouge); vertical-align: super; margin-left: 2px; }
+.donnee__texte { font-size: 0.95rem; color: var(--encre-douce); margin: 0; }
+
+/* --------------------------------------------------------------------------
+   11. Tarifs. Présentés comme une carte de score : des colonnes, des filets,
+       des chiffres alignés. Pas trois rectangles blancs identiques.
+   -------------------------------------------------------------------------- */
+.grille-tarifs { display: grid; gap: 0; border: 1px solid var(--trait); background: var(--papier-clair); }
+@media (min-width: 900px) { .grille-tarifs { grid-template-columns: 1.35fr 1fr 1fr; } }
+
+.tarif {
+  display: flex; flex-direction: column; gap: var(--e3);
+  padding: var(--e5) var(--e4);
+  border-bottom: 1px solid var(--trait);
+  position: relative;
+}
+@media (min-width: 900px) {
+  .tarif { border-bottom: 0; border-right: 1px solid var(--trait); }
+  .tarif:last-child { border-right: 0; }
+}
+.tarif:last-child { border-bottom: 0; }
+
+/* La formule mise en avant : un aplat encre, pas une bordure colorée. */
+.tarif--phare { background: var(--encre); color: var(--papier); }
+.tarif--phare .tarif__nom, .tarif--phare .tarif__prix { color: var(--papier-clair); }
+.tarif--phare .tarif__detail { color: var(--sur-vert-doux); }
+.tarif--phare .tarif__unite { color: var(--vert-clair); }
+
+.tarif__entete { display: flex; align-items: baseline; justify-content: space-between; gap: var(--e3); }
+.tarif__nom { font-family: var(--display); font-size: 1.06rem; font-weight: 620; letter-spacing: -0.02em; margin: 0; }
+.tarif__prix {
+  font-family: var(--display); font-size: var(--t-chiffre); font-weight: 700;
+  letter-spacing: -0.05em; line-height: 0.88; color: var(--encre);
+  display: flex; align-items: baseline; gap: 7px;
+}
+.tarif__prix small { font-size: 0.3em; font-weight: 500; letter-spacing: 0; }
+/* Un prix qui n'est pas un nombre ne se compose pas comme un nombre. */
+.tarif__prix--texte { font-size: clamp(1.5rem, 2.4vw, 2rem); letter-spacing: -0.035em; }
+
+/* Le petit trait devant les valeurs fortes du registre se lisait comme un
+   tiret cadratin égaré : la mise en gras suffit à marquer la différence. */
+.registre__valeur--fort::before { content: none; }
+.tarif__unite { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre-tenue); }
+.tarif__detail { font-size: 0.95rem; color: var(--encre-douce); margin: 0; }
+.tarif__pied { margin-top: auto; padding-top: var(--e3); }
+
+/* Tableau, quand il faut vraiment comparer des colonnes */
+.tableau-enveloppe { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tableau {
+  width: 100%; min-width: 540px; border-collapse: collapse;
+  background: var(--papier-clair); border: 1px solid var(--trait); font-size: 0.96rem;
+}
+.tableau caption {
+  caption-side: bottom; text-align: left; padding-top: var(--e3);
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--encre-tenue);
+}
+.tableau th, .tableau td { padding: 15px 16px; text-align: left; border-bottom: 1px solid var(--trait); vertical-align: top; }
+.tableau thead th {
+  background: var(--encre); color: var(--papier);
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; font-weight: 500;
+}
+.tableau tbody tr:last-child th, .tableau tbody tr:last-child td { border-bottom: 0; }
+.tableau tbody th { font-weight: 620; }
+.tableau__prix { font-family: var(--display); font-size: 1.24rem; font-weight: 660; letter-spacing: -0.035em; white-space: nowrap; }
+
+/* --------------------------------------------------------------------------
+   12. Les sites d'enseignement. Un visuel plein cadre à gauche — photo
+       quand elle existe, schéma dessiné sinon — et à droite la liste des
+       quatre lieux, la fiche du lieu actif, puis le plan. Tout bascule
+       ensemble : on clique une ligne, un point ou rien du tout.
+   -------------------------------------------------------------------------- */
+.lieux { display: grid; gap: var(--e5); }
+@media (min-width: 1000px) {
+  .lieux { grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr); gap: var(--e7); align-items: start; }
+}
+
+.lieux__visuel { position: relative; }
+.vue { margin: 0; display: none; }
+.vue.est-active { display: block; animation: apparition 420ms cubic-bezier(0.32, 0.72, 0, 1); }
+.vue__cadre {
+  position: relative; aspect-ratio: 4 / 5; overflow: hidden;
+  border: 1px solid var(--trait-clair-fort); background: rgba(239, 239, 230, 0.03);
+}
+.vue__cadre > svg { width: 100%; height: 100%; object-fit: contain; }
+.vue__cadre--photo { background: var(--vert-nuit); }
+.vue__cadre--photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* La plaque de nom, posée en bas du cadre comme une étiquette de départ. */
+.vue__plaque {
+  position: absolute; left: 0; bottom: 0; right: 0;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: var(--e4);
+  background: linear-gradient(to top, rgba(12, 31, 22, 0.94) 40%, rgba(12, 31, 22, 0));
+}
+.vue__plaque .tech { color: var(--vert-clair); }
+.vue__nom {
+  font-family: var(--display); font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  font-weight: 680; letter-spacing: -0.035em; color: var(--sur-vert); line-height: 1.1;
+}
+
+/* La liste des sites : quatre réglures sélectionnables. */
+.lieux__liste { border-top: 1px solid var(--trait-clair-fort); margin-bottom: var(--e5); }
+.lieu-ligne {
+  display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: var(--e3);
+  align-items: baseline; width: 100%; text-align: left; cursor: pointer;
+  padding: var(--e4) 0; background: none; border: 0;
+  border-bottom: 1px solid var(--trait-clair); font-family: inherit;
+  transition: padding var(--transition);
+}
+.lieu-ligne__num { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); color: var(--sur-vert-tenu); }
+.lieu-ligne__nom { font-family: var(--display); font-size: 1.06rem; font-weight: 620; letter-spacing: -0.02em; color: var(--sur-vert-doux); }
+.lieu-ligne__lieu { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--sur-vert-tenu); }
+.lieu-ligne:hover .lieu-ligne__nom { color: var(--sur-vert); }
+.lieu-ligne.est-actif { padding-left: var(--e3); }
+.lieu-ligne.est-actif .lieu-ligne__num { color: var(--rouge); }
+.lieu-ligne.est-actif .lieu-ligne__nom { color: var(--sur-vert); }
+.lieu-ligne.est-actif .lieu-ligne__lieu { color: var(--vert-clair); }
+
+.fiche-lieu { display: none; }
+.fiche-lieu.est-active { display: block; animation: apparition 380ms cubic-bezier(0.32, 0.72, 0, 1); }
+@keyframes apparition { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fiche-lieu__adresse {
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--vert-clair); font-style: normal;
+  display: block; margin-bottom: var(--e4);
+}
+.fiche-lieu__liste { list-style: none; margin: 0 0 var(--e4); padding: 0; border-top: 1px solid var(--trait-clair); }
+.fiche-lieu__liste li {
+  margin: 0; padding: 12px 0; border-bottom: 1px solid var(--trait-clair);
+  display: grid; grid-template-columns: 108px 1fr; gap: var(--e3);
+  font-size: 0.96rem; color: var(--sur-vert-doux);
+}
+.fiche-lieu__liste .tech { color: var(--sur-vert-tenu); padding-top: 2px; }
+.fiche-lieu__note { font-size: 0.95rem; color: var(--sur-vert-doux); }
+
+/* Le plan, en bas de colonne : plus petit qu'avant, il situe sans dominer. */
+.plan { margin-top: var(--e5); border: 1px solid var(--trait-clair); padding: var(--e3); background: rgba(239, 239, 230, 0.02); }
+.plan > svg { width: 100%; height: auto; }
+.plan__point { cursor: pointer; }
+.plan__halo { opacity: 0; transition: opacity var(--transition); }
+.plan__point.est-actif .plan__halo { opacity: 1; }
+.plan__point:hover .plan__halo { opacity: .5; }
+.plan__etiquette { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; fill: var(--sur-vert-tenu); }
+.plan__point.est-actif .plan__etiquette { fill: var(--sur-vert); }
+
+/* --------------------------------------------------------------------------
+   13. Diagnostic « quel format pour vous ». Trois questions, une réponse
+       chiffrée, un lien de réservation prérempli. C'est le seul widget qui
+       lève réellement l'hésitation d'un visiteur devant quatre formules.
+   -------------------------------------------------------------------------- */
+.diagnostic { border: 1px solid var(--trait); background: var(--papier-clair); }
+.diagnostic__barre { display: flex; border-bottom: 1px solid var(--trait); }
+.diagnostic__etape-num {
+  flex: 1; padding: 13px var(--e4); font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre-tenue);
+  border-right: 1px solid var(--trait); position: relative;
+}
+.diagnostic__etape-num:last-child { border-right: 0; }
+.diagnostic__etape-num.est-faite { color: var(--encre); }
+.diagnostic__etape-num.est-active { color: var(--rouge-texte); }
+.diagnostic__etape-num.est-active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--rouge); }
+
+.diagnostic__corps { padding: var(--e5) var(--e4); }
+.diagnostic__question { font-family: var(--display); font-size: clamp(1.24rem, 2.2vw, 1.7rem); font-weight: 660; letter-spacing: -0.03em; margin-bottom: var(--e4); }
+.diagnostic__choix { display: grid; gap: 10px; }
+@media (min-width: 640px) { .diagnostic__choix--2 { grid-template-columns: repeat(2, 1fr); } }
+.choix {
+  display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left;
+  padding: 16px 18px; background: transparent; border: 1px solid var(--trait);
+  font-family: inherit; font-size: 1rem; color: var(--encre); cursor: pointer;
+  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+}
+.choix:hover { border-color: var(--encre); background: var(--papier); }
+.choix:active { transform: scale(0.995); }
+.choix__lettre { font-family: var(--mono); font-size: var(--t-label); letter-spacing: 0.1em; color: var(--rouge); flex: none; }
+.choix__detail { display: block; font-size: 0.88rem; color: var(--encre-tenue); margin-top: 3px; }
+
+.diagnostic__resultat { display: none; }
+.diagnostic__resultat.est-visible { display: block; animation: apparition 420ms cubic-bezier(0.32, 0.72, 0, 1); }
+.resultat__ligne { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--e3); margin-bottom: var(--e3); }
+.resultat__formule { font-family: var(--display); font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 700; letter-spacing: -0.04em; }
+.resultat__prix { font-family: var(--display); font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 700; letter-spacing: -0.04em; color: var(--rouge-texte); }
+.resultat__pourquoi { color: var(--encre-douce); max-width: 52ch; margin-bottom: var(--e4); }
+.diagnostic__actions { display: flex; flex-wrap: wrap; gap: var(--e3); align-items: center; }
+.diagnostic__recommencer { background: none; border: 0; padding: 0; font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre-tenue); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+.diagnostic__recommencer:hover { color: var(--encre); }
+
+/* --------------------------------------------------------------------------
+   14. Comparatif coach / club. Un registre à deux colonnes, pas deux cartes.
+   -------------------------------------------------------------------------- */
+.registre { border-top: 1px solid var(--trait-clair-fort); }
+.registre__ligne {
+  display: grid; gap: 6px var(--e5); padding-block: var(--e4);
+  border-bottom: 1px solid var(--trait-clair);
+}
+@media (min-width: 780px) { .registre__ligne { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr); align-items: baseline; } }
+.registre__critere { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--sur-vert-tenu); }
+.registre__valeur { color: var(--sur-vert-doux); font-size: 0.98rem; }
+.registre__valeur--fort { color: var(--sur-vert); font-weight: 560; }
+.registre__valeur--fort::before { content: ""; display: inline-block; width: 9px; height: 1px; background: var(--vert-clair); vertical-align: middle; margin-right: 10px; }
+.registre__entete { display: none; }
+@media (min-width: 780px) {
+  .registre__entete { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--e5); padding-bottom: var(--e3); }
+}
+
+/* --------------------------------------------------------------------------
+   14 bis. Le déroulé, dessiné comme le routing d'un parcours : une ligne
+   continue, quatre jalons posés dessus. Construction volontairement
+   différente des réglures, pour que deux sections voisines ne se
+   ressemblent pas.
+   -------------------------------------------------------------------------- */
+.deroule { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e5); position: relative; }
+@media (min-width: 900px) {
+  /* auto-fit plutôt qu'un nombre fixe : un déroulé en trois jalons doit
+     occuper toute la largeur, pas les trois quarts. */
+  .deroule { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--e5); padding-top: var(--e5); }
+  /* La ligne du parcours, tirée d'un jalon à l'autre. */
+  .deroule::before {
+    content: ""; position: absolute; top: 7px; left: 6%; right: 6%;
+    height: 1px; background: var(--trait-fort);
+  }
+}
+.deroule__jalon { margin: 0; position: relative; padding-top: var(--e4); }
+@media (min-width: 900px) { .deroule__jalon { padding-top: var(--e5); } }
+.deroule__jalon::before {
+  content: ""; position: absolute; top: 0; left: 0;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--papier-creux); border: 1px solid var(--encre);
+}
+.deroule__jalon:first-child::before { background: var(--rouge); border-color: var(--rouge); }
+@media (max-width: 899px) {
+  .deroule__jalon { padding-left: var(--e4); padding-top: 0; border-left: 1px solid var(--trait-fort); }
+  .deroule__jalon::before { top: 5px; left: -5px; }
+}
+.deroule__num {
+  display: block; font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: var(--ls-label); color: var(--encre-tenue); margin-bottom: 9px;
+}
+.deroule__jalon h3 { font-size: 1.08rem; margin-bottom: 8px; }
+.deroule__jalon p { font-size: 0.96rem; color: var(--encre-douce); margin: 0; }
+
+/* --------------------------------------------------------------------------
+   14 ter. Les journées de stage, en carte de score : un bandeau encre, des
+   créneaux en chasse fixe dans la colonne de gauche, des filets entre les
+   lignes. On lit un programme comme on lit une carte, ligne à ligne.
+   -------------------------------------------------------------------------- */
+.programme { display: grid; gap: var(--e4); }
+@media (min-width: 880px) { .programme { grid-template-columns: repeat(2, 1fr); gap: 0; border: 1px solid var(--trait); } }
+.journee { border: 1px solid var(--trait); background: var(--papier-clair); }
+@media (min-width: 880px) { .journee { border: 0; border-right: 1px solid var(--trait); } .journee:last-child { border-right: 0; } }
+.journee__entete { background: var(--encre); color: var(--papier); padding: var(--e3) var(--e4) var(--e4); }
+.journee__entete h3 { color: var(--papier); margin: 6px 0 0; font-size: 1.16rem; letter-spacing: -0.028em; }
+.journee__entete .tech { color: var(--vert-clair); }
+.journee__liste { list-style: none; margin: 0; padding: 0; }
+.journee__liste li {
+  display: grid; grid-template-columns: 84px 1fr; gap: var(--e3);
+  margin: 0; padding: var(--e4); border-bottom: 1px solid var(--trait);
+}
+.journee__liste li:last-child { border-bottom: 0; }
+.journee__creneau { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--rouge-texte); padding-top: 3px; }
+.journee__fait { font-size: 0.97rem; color: var(--encre-douce); }
+.journee__fait strong { display: block; color: var(--encre); font-weight: 620; margin-bottom: 4px; }
+
+/* --------------------------------------------------------------------------
+   15. Questions. Des réglures dépliables, sans carte ni ombre. Le texte
+       reste toujours dans le DOM : le balisage FAQ ne produit plus de
+       résultat enrichi, ces réponses sont écrites pour être lues et citées.
+   -------------------------------------------------------------------------- */
+.questions { border-top: 1px solid var(--trait); max-width: 900px; }
+.section--vert .questions, .section--nuit .questions { border-top-color: var(--trait-clair-fort); }
+.question { border-bottom: 1px solid var(--trait); }
+.section--vert .question, .section--nuit .question { border-bottom-color: var(--trait-clair); }
+.question__titre { margin: 0; }
+.question__bouton {
+  display: grid; grid-template-columns: 34px 1fr 24px; align-items: baseline; gap: var(--e3);
+  width: 100%; padding: var(--e4) 0; background: none; border: 0; cursor: pointer; text-align: left;
+  font-family: var(--display); font-size: clamp(1.04rem, 1.5vw, 1.24rem); font-weight: 620;
+  letter-spacing: -0.022em; line-height: 1.3; color: var(--encre);
+  transition: color var(--transition);
+}
+.section--vert .question__bouton, .section--nuit .question__bouton { color: var(--sur-vert); }
+.question__bouton:hover { color: var(--rouge-texte); }
+.section--vert .question__bouton:hover, .section--nuit .question__bouton:hover { color: var(--vert-clair); }
+.question__num { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); color: var(--encre-tenue); }
+.section--vert .question__num, .section--nuit .question__num { color: var(--sur-vert-tenu); }
+.question__signe { position: relative; width: 15px; height: 15px; justify-self: end; align-self: center; flex: none; }
+.question__signe::before, .question__signe::after {
+  content: ""; position: absolute; top: 50%; left: 0; width: 100%; height: 1.5px;
+  margin-top: -0.75px; background: currentColor; transition: transform var(--transition);
+}
+.question__signe::after { transform: rotate(90deg); }
+.question__bouton[aria-expanded="true"] .question__signe::after { transform: rotate(0deg); }
+
+.question__panneau { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--transition-lente); }
+.question__panneau.est-ouvert { grid-template-rows: 1fr; }
+.question__interieur { overflow: hidden; }
+.question__reponse {
+  padding: 0 0 var(--e5) 48px; max-width: 62ch;
+  color: var(--encre-douce); font-size: 1rem;
+}
+.section--vert .question__reponse, .section--nuit .question__reponse { color: var(--sur-vert-doux); }
+@media (max-width: 640px) { .question__reponse { padding-left: 0; } }
+
+/* --------------------------------------------------------------------------
+   16. Textes longs, encadrés, prose
+   -------------------------------------------------------------------------- */
+.prose { max-width: var(--largeur-texte); }
+.prose h2 { margin-top: var(--e7); }
+.prose h2:first-child { margin-top: 0; }
+.prose h3 { margin-top: var(--e5); }
+.prose > p, .prose > ul, .prose > ol { color: var(--encre-douce); }
+.prose strong { color: var(--encre); }
+
+/* Prose en deux colonnes de rôle : titre à gauche, texte à droite. */
+.poste { display: grid; gap: var(--e3); padding-block: var(--e6); border-bottom: 1px solid var(--trait); }
+.poste:last-of-type { border-bottom: 0; }
+@media (min-width: 900px) { .poste { grid-template-columns: 260px minmax(0, 1fr); gap: var(--e7); } }
+.poste__titre { margin: 0; font-size: clamp(1.4rem, 2.4vw, 1.9rem); letter-spacing: -0.032em; }
+.poste__chiffre {
+  display: block; margin-top: 10px; font-family: var(--display);
+  font-size: 1.7rem; font-weight: 700; letter-spacing: -0.04em; color: var(--rouge-texte); line-height: 1;
+}
+
+.encadre {
+  border-left: 2px solid var(--rouge); padding: var(--e4) var(--e4) var(--e4) var(--e4);
+  background: var(--papier-clair); margin-bottom: var(--e4);
+}
+.encadre p:last-child { margin-bottom: 0; }
+.encadre--vert { border-left-color: var(--vert-vif); }
+.section--vert .encadre, .section--nuit .encadre { background: rgba(239, 239, 230, 0.05); border-left-color: var(--vert-clair); }
+
+/* Note de bas de section, en chasse fixe */
+.note {
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--encre-tenue); margin-top: var(--e4);
+}
+.section--vert .note, .section--nuit .note { color: var(--sur-vert-tenu); }
+
+/* Bandeau de relevé daté */
+.releve {
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 1px solid var(--trait-fort); padding: 8px 14px;
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--encre-douce);
+}
+
+/* Scénarios chiffrés de la page budget */
+.scenarios { display: grid; gap: 1px; background: var(--trait-clair); border: 1px solid var(--trait-clair-fort); }
+@media (min-width: 900px) { .scenarios { grid-template-columns: repeat(3, 1fr); } }
+.scenario { background: var(--vert); padding: var(--e5) var(--e4); display: flex; flex-direction: column; gap: var(--e3); }
+.scenario h3 { margin: 0; font-size: 1.1rem; }
+.scenario__total { font-family: var(--display); font-size: clamp(1.9rem, 3.4vw, 2.6rem); font-weight: 700; letter-spacing: -0.045em; color: var(--vert-clair); line-height: 1; }
+.scenario ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.scenario li {
+  display: flex; justify-content: space-between; gap: var(--e3); margin: 0;
+  font-size: 0.93rem; color: var(--sur-vert-doux);
+  border-bottom: 1px solid var(--trait-clair); padding-block: 9px;
+}
+.scenario li:last-child { border-bottom: 0; }
+.scenario li span:last-child { white-space: nowrap; color: var(--sur-vert); }
+
+/* --------------------------------------------------------------------------
+   17. Appel à l'action de fin de page. Pleine largeur, très grand, le
+       numéro de téléphone traité comme un titre.
+   -------------------------------------------------------------------------- */
+.appel { position: relative; background: var(--encre); color: var(--papier); padding-block: var(--e7); overflow: hidden; }
+.appel::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='420' viewBox='0 0 560 420'%3E%3Cg fill='none' stroke='%23EFEFE6' stroke-opacity='.05' stroke-width='1'%3E%3Cellipse cx='280' cy='210' rx='250' ry='170'/%3E%3Cellipse cx='274' cy='207' rx='190' ry='128'/%3E%3Cellipse cx='268' cy='204' rx='134' ry='90'/%3E%3Cellipse cx='262' cy='200' rx='82' ry='55'/%3E%3Cellipse cx='258' cy='197' rx='34' ry='23'/%3E%3C/g%3E%3C/svg%3E");
+  background-position: 80% center; background-size: 780px auto;
+}
+.appel > * { position: relative; z-index: 1; }
+.appel h2 { color: var(--papier); font-size: clamp(2.1rem, 4.6vw, 3.6rem); letter-spacing: -0.04em; max-width: 16ch; }
+.appel p { color: var(--sur-vert-doux); max-width: 50ch; }
+.appel__grille { display: grid; gap: var(--e5); }
+@media (min-width: 880px) { .appel__grille { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--e7); } }
+.appel__tel {
+  display: block; font-family: var(--display); font-size: clamp(1.9rem, 3.6vw, 2.9rem);
+  font-weight: 700; letter-spacing: -0.045em; color: var(--papier); text-decoration: none;
+  transition: color var(--transition);
+}
+.appel__tel:hover { color: var(--vert-clair); }
+.appel__colonne { display: flex; flex-direction: column; gap: var(--e3); }
+
+/* --------------------------------------------------------------------------
+   18. Formulaire
+   -------------------------------------------------------------------------- */
+.formulaire { border: 1px solid var(--trait); background: var(--papier-clair); padding: var(--e5) var(--e4); }
+.champs { display: grid; gap: var(--e4); }
+@media (min-width: 640px) { .champs { grid-template-columns: repeat(2, 1fr); } }
+.champ { display: flex; flex-direction: column; gap: 7px; }
+.champ--pleine { grid-column: 1 / -1; }
+.champ label { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre-douce); }
+.champ__obligatoire { color: var(--rouge); }
+.champ__aide { display: block; font-family: var(--ui); font-size: 0.85rem; letter-spacing: 0; text-transform: none; color: var(--encre-tenue); margin-top: 4px; }
+.champ input, .champ select, .champ textarea {
+  width: 100%; font-family: inherit; font-size: 1rem; color: var(--encre);
+  background: transparent; border: 0; border-bottom: 1px solid var(--trait-fort);
+  border-radius: 0; padding: 11px 2px;
+  transition: border-color var(--transition), background var(--transition);
+}
+.champ select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--encre-douce) 50%), linear-gradient(135deg, var(--encre-douce) 50%, transparent 50%); background-position: right 8px center, right 3px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 26px; }
+.champ textarea { min-height: 108px; resize: vertical; }
+.champ input:focus, .champ select:focus, .champ textarea:focus { border-bottom-color: var(--rouge); outline: none; }
+.champ input[aria-invalid="true"], .champ select[aria-invalid="true"], .champ textarea[aria-invalid="true"] { border-bottom-color: var(--rouge); }
+.champ__erreur { font-size: 0.84rem; color: var(--rouge-texte); }
+.champ__erreur:empty { display: none; }
+
+/* La case de consentement porte un texte juridique : il doit se lire en
+   bas de casse, pas en capitales de libellé. La sélection est plus précise
+   que « .champ label » pour l'emporter. */
+.champ label.case, .case {
+  display: flex; align-items: flex-start; gap: 11px;
+  font-family: var(--ui); font-size: 0.92rem; font-weight: 400;
+  letter-spacing: 0; text-transform: none; color: var(--encre-douce); cursor: pointer;
+}
+.case input { width: 18px; height: 18px; flex: none; margin-top: 2px; accent-color: var(--vert-vif); }
+
+.formulaire__pied { margin-top: var(--e5); display: grid; gap: var(--e3); }
+.formulaire__note { font-family: var(--mono); font-size: var(--t-label); letter-spacing: 0.07em; text-transform: uppercase; color: var(--encre-tenue); margin: 0; }
+
+.message-confirmation { display: none; border-left: 2px solid var(--vert-vif); background: var(--vert-voile); padding: var(--e4); color: var(--encre); }
+.message-confirmation.est-visible { display: block; }
+
+.contact__grille { display: grid; gap: var(--e6); }
+@media (min-width: 960px) { .contact__grille { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: var(--e7); } }
+.contact__tel { display: inline-block; font-family: var(--display); font-size: clamp(1.9rem, 3.4vw, 2.6rem); font-weight: 700; letter-spacing: -0.045em; color: var(--encre); text-decoration: none; }
+.contact__tel:hover { color: var(--rouge-texte); }
+.coordonnees { list-style: none; margin: var(--e5) 0; padding: 0; border-top: 1px solid var(--trait); }
+.coordonnees li { display: grid; grid-template-columns: 130px 1fr; gap: var(--e3); margin: 0; padding: 14px 0; border-bottom: 1px solid var(--trait); align-items: baseline; }
+.coordonnees__intitule { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre-tenue); }
+.coordonnees__valeur { font-style: normal; color: var(--encre); }
+.coordonnees__valeur a { color: var(--encre); text-decoration: none; border-bottom: 1px solid var(--trait-fort); }
+.coordonnees__valeur a:hover { border-color: var(--rouge); color: var(--rouge-texte); }
+
+/* --------------------------------------------------------------------------
+   19. Pied de page. Une grille de carnet : filets, colonnes, chasse fixe.
+   -------------------------------------------------------------------------- */
+.pied { background: var(--vert-nuit); color: var(--sur-vert-doux); padding-block: var(--e7) var(--e5); font-size: 0.95rem; position: relative; }
+.pied__grille { display: grid; gap: var(--e6); padding-bottom: var(--e6); border-bottom: 1px solid var(--trait-clair); }
+@media (min-width: 700px) { .pied__grille { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1040px) { .pied__grille { grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: var(--e6); } }
+.pied__logo { color: var(--sur-vert); margin-bottom: var(--e4); }
+.pied__logo .logo__metier { color: var(--sur-vert-tenu); }
+.pied__logo .logo__marque { width: 54px; height: 54px; }
+.pied__tel { display: inline-block; font-family: var(--display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.04em; color: var(--sur-vert); text-decoration: none; margin-bottom: 10px; }
+.pied__tel:hover { color: var(--vert-clair); }
+.pied__adresse { font-style: normal; margin-bottom: var(--e3); color: var(--sur-vert-doux); }
+.pied__titre { font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--vert-clair); font-weight: 500; margin-bottom: var(--e4); }
+.pied__liste { list-style: none; margin: 0; padding: 0; }
+.pied__liste li { margin: 0; border-bottom: 1px solid var(--trait-clair); }
+.pied__liste li:first-child { border-top: 1px solid var(--trait-clair); }
+.pied__liste a { display: block; padding: 11px 0; color: var(--sur-vert-doux); text-decoration: none; transition: color var(--transition), padding var(--transition); }
+.pied__liste a:hover { color: var(--sur-vert); padding-left: 6px; }
+.pied__bas { margin-top: var(--e5); font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.05em; color: var(--sur-vert-tenu); display: grid; gap: 8px; line-height: 1.7; }
+.pied__bas p { margin: 0; }
+.pied__bas a { color: var(--sur-vert-doux); }
+.pied__reseaux { display: flex; gap: 8px; margin-top: var(--e4); }
+.pied__reseaux a { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--trait-clair-fort); color: var(--sur-vert-doux); transition: background var(--transition), color var(--transition); }
+.pied__reseaux a:hover { background: var(--sur-vert); color: var(--vert-nuit); }
+.pied__reseaux svg { width: 16px; height: 16px; }
+
+/* --------------------------------------------------------------------------
+   20. Barre d'appel mobile. Deux actions, un filet, rien de flottant.
+   -------------------------------------------------------------------------- */
+.barre-appel {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+  display: grid; grid-template-columns: 1fr 1.35fr; gap: 8px;
+  padding: 9px var(--gouttiere) calc(9px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--papier) 92%, transparent);
+  backdrop-filter: blur(14px); border-top: 1px solid var(--trait);
+  transform: translateY(110%); transition: transform var(--transition);
+}
+.barre-appel.est-visible { transform: none; }
+@media (min-width: 820px) { .barre-appel { display: none; } }
+@media (max-width: 819px) { body { padding-bottom: 72px; } }
+
+/* --------------------------------------------------------------------------
+   21. Animations. Révélation courte, léger décalage en cascade, rien de plus.
+   -------------------------------------------------------------------------- */
+/* L'état masqué n'est posé que si le JavaScript tourne : la classe « js »
+   est ajoutée par un script en ligne dans le head. Sans elle, tout le
+   contenu reste visible, y compris si le script échoue à se charger. */
+.js [data-reveler] { opacity: 0; transform: translateY(14px); }
+.js [data-reveler].est-visible { opacity: 1; transform: none; transition: opacity 620ms cubic-bezier(0.32,0.72,0,1), transform 620ms cubic-bezier(0.32,0.72,0,1); }
+.js [data-reveler][style*="--retard"].est-visible { transition-delay: var(--retard); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .js [data-reveler] { opacity: 1; transform: none; }
+  .barre-appel { transform: none; }
+}
+
+/* --------------------------------------------------------------------------
+   22. Impression. Une carte de score s'imprime : autant que ce soit propre.
+   -------------------------------------------------------------------------- */
+@media print {
+  .entete, .bandeau-haut, .barre-appel, .menu-mobile, .appel, .pied__reseaux { display: none !important; }
+  body { background: #fff; color: #000; padding: 0; }
+  .section { padding-block: 18px; background: #fff !important; color: #000 !important; }
+  .section--vert, .section--nuit, .heros { background: #fff !important; color: #000 !important; }
+  .section--vert::before, .section--nuit::before, .heros::before { display: none; }
+  .question__panneau { grid-template-rows: 1fr !important; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.75em; }
+}

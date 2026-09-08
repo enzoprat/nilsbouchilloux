@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+
+# Outillage local d'aperçu : le script contient un chemin absolu propre à
+# la machine, il n'a rien à faire dans un dépôt partagé.
+.claude/
+
+# Documents de travail internes, volontairement non versionnés : le dépôt
+# est public et ces fichiers listent ce qui manque au client, ses données
+# d'entreprise et une comparaison avec un concurrent.
+A-COMPLETER.md
+QUESTIONS-NILS.md
