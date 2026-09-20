@@ -1,9 +1,10 @@
 .DS_Store
 node_modules/
 
-# Outillage local d'aperçu : le script contient un chemin absolu propre à
-# la machine, il n'a rien à faire dans un dépôt partagé.
+# Outillage local d'aperçu : la configuration contient un chemin absolu
+# propre à la machine, elle n'a rien à faire dans un dépôt partagé.
 .claude/
+apercu-local.js
 
 # Documents de travail internes, volontairement non versionnés : le dépôt
 # est public et ces fichiers listent ce qui manque au client, ses données
