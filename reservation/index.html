@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Réserver un créneau — Nils Bouchilloux</title>
+<meta name="description" content="Choisir un créneau de cours de golf avec Nils Bouchilloux, au Golf de Cestas ou à Barena Mérignac.">
+
+<!--
+  Cette page est un outil, pas un contenu. Elle n'a rien à apporter à une
+  page de résultats : la page de contenu qui vise « réserver un cours de
+  golf à Bordeaux », c'est /reserver/, et elle garde son référencement.
+  D'où le noindex, et l'absence de cette URL dans sitemap.xml.
+-->
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/reservation.css">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" type="image/png" href="/assets/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/favicon-180.png">
+<meta name="theme-color" content="#12362A">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Réserver un créneau avec Nils Bouchilloux">
+<meta property="og:description" content="Les prochains créneaux disponibles au Golf de Cestas et à Barena Mérignac.">
+</head>
+<body>
+
+<a class="saut-contenu" href="#contenu">Aller au contenu</a>
+
+<div class="bandeau-haut">
+  <div class="conteneur bandeau-haut__ligne">
+    <div class="bandeau-haut__infos">
+      <span>Enseignant diplômé BPJEPS</span>
+      <span class="bandeau-haut__sep bandeau-haut__masquable" aria-hidden="true">/</span>
+      <span class="bandeau-haut__masquable">Cestas · Mérignac</span>
+    </div>
+    <a class="bandeau-haut__tel" href="tel:+33682377506">06 82 37 75 06</a>
+  </div>
+</div>
+
+<header class="entete">
+  <div class="conteneur entete__ligne">
+    <a class="logo" href="/" aria-label="Nils Bouchilloux, cours de golf à Bordeaux, accueil">
+      <img class="logo__marque" src="/assets/img/logo-nils-bouchilloux.webp"
+        alt="" width="256" height="262" loading="eager" decoding="async">
+      <span class="logo__texte">
+        <span class="logo__nom">Nils Bouchilloux</span>
+        <span class="logo__metier">Professeur de golf · Bordeaux</span>
+      </span>
+    </a>
+    <div class="entete__actions">
+      <a class="bouton bouton--contour bouton--petit appel-entete" href="tel:+33682377506">Appeler</a>
+    </div>
+  </div>
+</header>
+
+<main id="contenu" class="tee">
+  <div class="conteneur conteneur--etroit">
+
+    <div class="tee__intro" data-intro>
+      <h1>Choisir un créneau</h1>
+      <p>
+        Les journées ci-dessous sont celles où j'enseigne et où il reste de la place.
+        Trois gestes : la journée, l'horaire, la formule.
+      </p>
+    </div>
+
+    <!-- Chargement -->
+    <div data-chargement>
+      <p class="tech" style="margin-bottom:var(--e3)">Chargement des disponibilités</p>
+      <div class="squelette" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Aucune date ouverte -->
+    <div class="tee__vide" data-vide hidden>
+      <p class="tech">Aucun créneau en ligne pour le moment</p>
+      <p>
+        Les disponibilités ne sont pas encore publiées, ou tout est pris.
+        Le plus simple reste alors de m'appeler : on trouve souvent une place.
+      </p>
+      <p>
+        <a class="bouton bouton--plein" href="tel:+33682377506">Appeler le 06 82 37 75 06</a>
+      </p>
+    </div>
+
+    <!-- Panne -->
+    <div class="tee__erreur" data-erreur hidden>
+      <p class="tech">Le planning ne répond pas</p>
+      <p data-erreur-message></p>
+      <p>
+        <a class="bouton bouton--plein" href="tel:+33682377506">Appeler le 06 82 37 75 06</a>
+        <button class="bouton bouton--contour" type="button" data-reessayer>Réessayer</button>
+      </p>
+    </div>
+
+    <!-- Parcours de réservation -->
+    <div data-flux hidden>
+
+      <section class="etape" data-etape="jour" aria-labelledby="t-jour">
+        <div class="etape__titre">
+          <span class="etape__num">01</span>
+          <span class="etape__intitule" id="t-jour">La journée</span>
+        </div>
+        <div class="jours" data-jours role="group" aria-labelledby="t-jour"></div>
+        <div class="plaque" data-plaque hidden>
+          <span class="plaque__pastille" aria-hidden="true"></span>
+          <span>
+            <span class="plaque__nom" data-plaque-nom></span>
+            <span class="plaque__ville" data-plaque-ville></span>
+          </span>
+          <span class="plaque__reste" data-plaque-reste></span>
+        </div>
+      </section>
+
+      <section class="etape" data-etape="heure" aria-labelledby="t-heure" hidden>
+        <div class="etape__titre">
+          <span class="etape__num">02</span>
+          <span class="etape__intitule" id="t-heure">L'horaire</span>
+        </div>
+        <div class="heures" data-heures role="group" aria-labelledby="t-heure"></div>
+      </section>
+
+      <section class="etape" data-etape="formule" aria-labelledby="t-formule" hidden>
+        <div class="etape__titre">
+          <span class="etape__num">03</span>
+          <span class="etape__intitule" id="t-formule">La formule</span>
+        </div>
+        <div class="formules" data-formules role="group" aria-labelledby="t-formule"></div>
+      </section>
+
+      <section class="etape" data-etape="coordonnees" aria-labelledby="t-coord" hidden>
+        <div class="etape__titre">
+          <span class="etape__num">04</span>
+          <span class="etape__intitule" id="t-coord">Vos coordonnées</span>
+        </div>
+
+        <form data-formulaire novalidate>
+          <div class="champs">
+            <div class="champ">
+              <label for="prenom">Prénom <span class="champ__obligatoire">*</span></label>
+              <input type="text" id="prenom" name="prenom" autocomplete="given-name" required>
+              <span class="champ__erreur" data-erreur-champ role="alert"></span>
+            </div>
+            <div class="champ">
+              <label for="nom">Nom <span class="champ__obligatoire">*</span></label>
+              <input type="text" id="nom" name="nom" autocomplete="family-name" required>
+              <span class="champ__erreur" data-erreur-champ role="alert"></span>
+            </div>
+            <div class="champ">
+              <label for="telephone">Téléphone <span class="champ__obligatoire">*</span></label>
+              <input type="tel" id="telephone" name="telephone" autocomplete="tel" inputmode="tel" required>
+              <span class="champ__erreur" data-erreur-champ role="alert"></span>
+            </div>
+            <div class="champ">
+              <label for="email">E-mail <span class="champ__obligatoire">*</span></label>
+              <input type="email" id="email" name="email" autocomplete="email" inputmode="email" required>
+              <span class="champ__erreur" data-erreur-champ role="alert"></span>
+            </div>
+            <div class="champ champ--pleine">
+              <label for="message">
+                Message
+                <span class="champ__aide">Facultatif. Votre niveau, un objectif, une gêne physique, du matériel à emprunter.</span>
+              </label>
+              <textarea id="message" name="message"></textarea>
+            </div>
+            <div class="champ champ--pleine">
+              <label class="case" for="consentement">
+                <input type="checkbox" id="consentement" name="consentement" required>
+                <span>J'accepte que mes coordonnées soient utilisées pour organiser ce cours, conformément à la <a href="/politique-de-confidentialite/">politique de confidentialité</a>. <span class="champ__obligatoire">*</span></span>
+              </label>
+              <span class="champ__erreur" data-erreur-champ role="alert"></span>
+            </div>
+          </div>
+
+          <div class="recap" data-recap>
+            <p class="recap__titre">Récapitulatif</p>
+            <div data-recap-lignes></div>
+          </div>
+
+          <div class="formulaire__pied" style="margin-top:var(--e4)">
+            <button class="bouton bouton--plein bouton--large" type="submit" data-envoyer>
+              Confirmer ma réservation
+            </button>
+            <p class="formulaire__note">Aucun paiement en ligne. Le cours se règle sur place.</p>
+            <p class="champ__erreur" data-erreur-envoi role="alert"></p>
+          </div>
+        </form>
+      </section>
+
+    </div>
+
+    <!-- Confirmation -->
+    <div class="confirmation" data-confirmation hidden tabindex="-1">
+      <div class="confirmation__marque" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M4.5 12.5 10 18 19.5 6.5"/>
+        </svg>
+      </div>
+      <h2>Votre cours est réservé</h2>
+      <div class="recap" data-confirmation-recap></div>
+      <div class="confirmation__suite" data-confirmation-suite></div>
+    </div>
+
+  </div>
+
+  <div class="rappel" data-rappel>
+    <span class="rappel__texte" data-rappel-texte></span>
+    <span class="rappel__prix" data-rappel-prix></span>
+  </div>
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div class="pied__bas">
+      <p>
+        Nils Bouchilloux, professeur de golf diplômé BPJEPS ·
+        <a href="tel:+33682377506">06 82 37 75 06</a>
+      </p>
+      <p>
+        <a href="/">Le site</a> ·
+        <a href="/reserver/">Nous contacter</a> ·
+        <a href="/mentions-legales/">Mentions légales</a> ·
+        <a href="/politique-de-confidentialite/">Confidentialité</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<script src="/assets/js/reservation.js" defer></script>
+</body>
+</html>

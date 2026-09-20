@@ -3,7 +3,8 @@
 Site de **Nils Bouchilloux**, professeur de golf diplômé BPJEPS à Bordeaux.
 
 HTML statique, sans build, sans dépendance, sans police téléchargée.
-Neuf pages, environ 430 Ko au total.
+Neuf pages de contenu, plus un système de réservation en ligne dont les
+fonctions serverless tiennent elles aussi sans la moindre dépendance.
 
 ## Structure
 
@@ -14,11 +15,20 @@ cours-de-golf-debutant-bordeaux/      Débuter le golf, carte verte
 budget-debuter-golf-bordeaux/         Budget pour commencer  (noindex)
 ecole-de-golf-bordeaux/               Cycle jeunes           (noindex)
 a-propos/                             Parcours de l'enseignant
-reserver/                             Formulaire de réservation
+reserver/                             Contenu, tarifs, formulaire WhatsApp
 mentions-legales/
 politique-de-confidentialite/
+
+reservation/                          Prise de rendez-vous  (noindex)
+admin/                                Planning de Nils      (noindex)
+api/                                  Fonctions Vercel du système de réservation
+supabase/schema.sql                   Base de données du système de réservation
+
 assets/css/style.css                  Système visuel complet
+assets/css/reservation.css            Style du module de réservation seul
 assets/js/main.js                     Navigation, accordéons, widgets, formulaire
+assets/js/reservation.js              Parcours client
+assets/js/admin.js                    Outil de Nils
 assets/img/                           Logo, photographies, favicons
 robots.txt  sitemap.xml
 ```
@@ -50,6 +60,16 @@ Les deux se trouvent en haut de `assets/js/main.js`.
   réservation ne poste vers aucun service d'envoi : il met la demande en forme
   et ouvre la conversation WhatsApp, que le visiteur envoie lui-même. Changer
   ce numéro suffit à changer de destinataire.
+
+## Système de réservation
+
+Journées et créneaux créés à la main par Nils, réservation immédiate côté
+client, e-mails automatiques des deux côtés. Installation, variables
+d'environnement et mode d'emploi : **[RESERVATION.md](RESERVATION.md)**.
+
+Il ne fonctionne qu'une fois les variables d'environnement renseignées sur
+Vercel. Sans elles, le site continue de marcher exactement comme avant et les
+deux pages concernées affichent un message explicite.
 
 ## Mise en ligne
 

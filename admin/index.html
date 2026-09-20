@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planning — Nils Bouchilloux</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/reservation.css">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/img/favicon-180.png">
+<meta name="theme-color" content="#12362A">
+</head>
+<body>
+
+<main class="admin">
+  <div class="conteneur conteneur--etroit">
+
+    <!-- Connexion -->
+    <section class="connexion" data-connexion hidden>
+      <p class="repere"><span class="repere__num">NB</span> Espace de Nils</p>
+      <h1>Planning</h1>
+      <p>Entrez le mot de passe pour ouvrir vos disponibilités.</p>
+      <form data-connexion-formulaire novalidate>
+        <div class="champ">
+          <label for="motdepasse">Mot de passe</label>
+          <input type="password" id="motdepasse" name="motdepasse" autocomplete="current-password" required>
+          <span class="champ__erreur" data-connexion-erreur role="alert"></span>
+        </div>
+        <p style="margin-top:var(--e4)">
+          <button class="bouton bouton--plein bouton--large" type="submit">Entrer</button>
+        </p>
+      </form>
+    </section>
+
+    <!-- Planning -->
+    <section data-espace hidden>
+      <div class="admin__barre">
+        <div>
+          <p class="repere" style="margin-bottom:6px"><span class="repere__num">NB</span> Vos disponibilités</p>
+          <h1>Planning</h1>
+        </div>
+        <button class="bouton bouton--contour bouton--petit" type="button" data-deconnexion>Fermer la session</button>
+      </div>
+
+      <div data-message hidden></div>
+
+      <!-- Ouvrir une journée -->
+      <div class="nouvelle">
+        <p class="tech" style="margin-bottom:var(--e3)">Ouvrir une journée</p>
+        <form data-nouvelle novalidate>
+          <div class="nouvelle__grille">
+            <div>
+              <label for="date">Date</label>
+              <input type="date" id="date" name="date" required>
+            </div>
+            <div>
+              <label for="lieu">Lieu</label>
+              <select id="lieu" name="lieu" required data-lieux></select>
+            </div>
+          </div>
+
+          <div style="margin-top:var(--e3)">
+            <label for="horaires">Horaires</label>
+            <input type="text" id="horaires" name="horaires" inputmode="text"
+              placeholder="9h  10h  11h30  14h  16h30" autocomplete="off">
+            <p class="champ__aide" style="margin-top:6px">
+              Séparez par un espace ou une virgule. « 9 », « 9h », « 9h30 » et « 930 » sont compris.
+            </p>
+          </div>
+
+          <!-- Remplir une journée entière en un geste, plutôt que de taper
+               huit horaires l'un après l'autre sur un clavier de téléphone. -->
+          <div class="nouvelle__grille" style="margin-top:var(--e3)">
+            <div>
+              <label for="serie-debut">Série, de</label>
+              <input type="time" id="serie-debut" value="09:00">
+            </div>
+            <div>
+              <label for="serie-fin">jusqu'à</label>
+              <input type="time" id="serie-fin" value="17:00">
+            </div>
+            <div>
+              <label for="serie-pas">tous les</label>
+              <select id="serie-pas">
+                <option value="30">30 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="60" selected>1 heure</option>
+                <option value="90">1 h 30</option>
+                <option value="120">2 heures</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="bouton bouton--contour bouton--large" type="button" data-serie>Remplir</button>
+            </div>
+          </div>
+
+          <p style="margin-top:var(--e4)">
+            <button class="bouton bouton--plein bouton--large" type="submit">Ouvrir cette journée</button>
+          </p>
+        </form>
+      </div>
+
+      <!-- Les journées -->
+      <p class="tech" style="margin-bottom:var(--e3)">Prochaines journées</p>
+      <div data-planning></div>
+      <div class="tee__vide" data-planning-vide hidden>
+        <p class="tech">Aucune journée ouverte</p>
+        <p>Ouvrez une journée ci-dessus : elle apparaîtra aussitôt sur la page de réservation.</p>
+      </div>
+
+      <p class="tech" style="margin-top:var(--e6)">
+        Lien à partager : <a href="/reservation/" target="_blank" rel="noopener">nilsbouchilloux.fr/reservation</a>
+      </p>
+    </section>
+
+  </div>
+</main>
+
+<script src="/assets/js/admin.js" defer></script>
+</body>
+</html>

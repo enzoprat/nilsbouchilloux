@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
 
+# L'espace de gestion de Nils et l'outil de prise de rendez-vous ne sont pas
+# des contenus : ils n'ont rien à faire dans un index. /reservation/ porte en
+# plus une balise noindex, /admin/ est protégé par mot de passe.
+Disallow: /admin/
+Disallow: /api/
+
 Sitemap: https://www.nilsbouchilloux.fr/sitemap.xml

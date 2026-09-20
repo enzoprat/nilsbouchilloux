@@ -1105,6 +1105,25 @@ a.reglure:hover .reglure__titre { color: var(--rouge-texte); }
 .message-confirmation.est-visible { display: block; }
 .message-confirmation p + p { margin-top: var(--e3); color: var(--encre-douce); font-size: 0.95rem; }
 
+/* L'encart qui mène aux créneaux en ligne. Il prend le fond profond des
+   moments forts du site : c'est désormais le chemin le plus court vers un
+   cours, il ne peut pas ressembler à une note de bas de page. */
+.creneaux-encart {
+  background: var(--vert-nuit); color: var(--sur-vert);
+  border-left: 3px solid var(--rouge);
+  padding: var(--e5) var(--e4); margin-bottom: var(--e6);
+}
+.creneaux-encart__label {
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--sur-vert-tenu); margin: 0 0 var(--e3);
+}
+.creneaux-encart__titre {
+  font-family: var(--display); font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+  font-weight: 680; letter-spacing: -0.03em; line-height: 1.15;
+  margin: 0 0 var(--e3); max-width: 22ch;
+}
+.creneaux-encart__texte { color: var(--sur-vert-doux); max-width: 48ch; margin: 0 0 var(--e4); }
+
 .contact__grille { display: grid; gap: var(--e6); }
 @media (min-width: 960px) { .contact__grille { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: var(--e7); } }
 .contact__tel { display: inline-block; font-family: var(--display); font-size: clamp(1.9rem, 3.4vw, 2.6rem); font-weight: 700; letter-spacing: -0.045em; color: var(--encre); text-decoration: none; }

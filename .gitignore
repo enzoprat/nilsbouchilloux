@@ -10,3 +10,9 @@ node_modules/
 # d'entreprise et une comparaison avec un concurrent.
 A-COMPLETER.md
 QUESTIONS-NILS.md
+
+# Le système de réservation lit ses clés dans les variables d'environnement
+# de Vercel. Un fichier local ne doit jamais partir dans le dépôt.
+.env
+.env.*
+.vercel/

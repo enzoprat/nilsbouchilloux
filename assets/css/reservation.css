@@ -1,0 +1,375 @@
+/* ==========================================================================
+   Nils Bouchilloux — module de réservation
+
+   Ce fichier ne charge que sur /reservation/ et /admin/. Les pages de
+   contenu, elles, n'ont aucune raison de payer ces kilo-octets.
+
+   Direction artistique : le site entier parle le langage de la carte de
+   score. Une prise de rendez-vous de golf a son objet à elle, tout aussi
+   concret — la FEUILLE DE DÉPART affichée au pro-shop, où les heures sont
+   inscrites à la main les unes sous les autres. D'où :
+
+   - des horaires en chasse fixe tabulaire, alignés en colonnes régulières,
+     traités comme des données et pas comme des boutons d'application ;
+   - des cases séparées par des filets d'un pixel, jamais des cartes
+     flottantes à ombre portée ;
+   - le rouge du piquet arrière pour marquer ce qui est choisi, et lui seul ;
+   - deux lieux qu'on distingue par un aplat de couleur du parcours, vert
+     pour Cestas, sable pour Barena, comme deux marques de départ.
+
+   Rien de tout ça n'est décoratif : à la fin, l'écran doit se lire comme la
+   feuille qu'on consulte en arrivant au practice.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Coquille
+   -------------------------------------------------------------------------- */
+.tee { padding-block: var(--e5) var(--e8); }
+.tee__intro { margin-bottom: var(--e5); }
+.tee__intro h1 { font-size: var(--t-h1); letter-spacing: var(--ls-h1); margin: 0 0 var(--e3); }
+.tee__intro p { color: var(--encre-douce); max-width: 46ch; margin: 0; }
+
+/* Une étape apparaît quand la précédente est tranchée. Rien ne clignote,
+   rien ne se replie : la page pousse vers le bas, comme une feuille qu'on
+   remplit ligne à ligne. */
+.etape { border-top: 1px solid var(--trait); padding-top: var(--e4); margin-top: var(--e5); }
+.etape[hidden] { display: none !important; }
+.etape__titre { display: flex; align-items: baseline; gap: 10px; margin-bottom: var(--e4); }
+.etape__num {
+  display: inline-block; padding: 3px 7px 2px; background: var(--rouge); color: #fff;
+  font-family: var(--mono); font-size: var(--t-label); font-weight: 600; letter-spacing: 0.08em;
+}
+.etape__intitule {
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--encre-tenue);
+}
+.etape__choix {
+  margin-left: auto; font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: 0.06em; color: var(--encre); background: none; border: 0;
+  border-bottom: 1px solid var(--trait-fort); padding: 0 0 2px; cursor: pointer;
+}
+.etape__choix:hover { color: var(--rouge-texte); border-color: var(--rouge); }
+
+/* Le numéro est déjà dans le bandeau, à quarante pixels au-dessus. Le
+   répéter dans l'en-tête fait déborder la ligne sur un écran de 375 px,
+   pour une information qu'on vient de donner. */
+.appel-entete { display: none; }
+@media (min-width: 560px) { .appel-entete { display: inline-flex; } }
+
+/* --------------------------------------------------------------------------
+   2. Les journées. Bande défilante, comme la rangée de numéros de trous en
+   haut d'une carte de score.
+   -------------------------------------------------------------------------- */
+.jours {
+  display: flex; gap: 10px; overflow-x: auto; padding-bottom: var(--e3);
+  margin-inline: calc(var(--gouttiere) * -1); padding-inline: var(--gouttiere);
+  scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.jour {
+  flex: none; width: 104px; scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 12px 11px; cursor: pointer; text-align: left;
+  background: var(--papier-clair); border: 1px solid var(--trait);
+  border-radius: var(--r-net); color: var(--encre);
+  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+}
+.jour:hover { border-color: var(--trait-fort); }
+.jour__sem {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--encre-tenue);
+}
+.jour__num {
+  font-family: var(--display); font-size: 2rem; font-weight: 700; line-height: 1;
+  letter-spacing: -0.04em; font-variant-numeric: tabular-nums lining-nums;
+}
+.jour__mois {
+  font-family: var(--mono); font-size: 0.625rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--encre-douce);
+}
+.jour__lieu {
+  margin-top: 6px; font-family: var(--mono); font-size: 0.575rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--encre-douce);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.jour.est-choisi .jour__lieu { color: var(--sur-vert-doux); }
+
+/* Le repère de lieu : un trait de couleur en pied de case, comme la marque
+   peinte sur le piquet de départ. */
+.jour__marque { height: 4px; margin-top: 7px; background: var(--vert-vif); }
+.jour[data-teinte="sable"] .jour__marque { background: var(--sable); }
+.jour.est-choisi {
+  background: var(--encre); border-color: var(--encre); color: var(--papier-clair);
+}
+.jour.est-choisi .jour__sem,
+.jour.est-choisi .jour__mois { color: var(--sur-vert-tenu); }
+.jour.est-choisi .jour__marque { background: var(--rouge); }
+
+/* La plaque du lieu, sous la bande. Elle nomme en toutes lettres ce que la
+   couleur a seulement suggéré : la couleur ne doit jamais être la seule
+   information. */
+.plaque {
+  display: flex; align-items: center; gap: 12px; margin-top: var(--e4);
+  padding: 13px 15px; border: 1px solid var(--trait); background: var(--papier-clair);
+}
+.plaque__pastille { width: 10px; height: 34px; flex: none; background: var(--vert-vif); }
+.plaque[data-teinte="sable"] .plaque__pastille { background: var(--sable); }
+.plaque__nom { font-family: var(--display); font-weight: 650; letter-spacing: -0.02em; }
+.plaque__ville {
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--encre-tenue); display: block; margin-top: 2px;
+}
+.plaque__reste {
+  margin-left: auto; text-align: right;
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--encre-tenue);
+}
+
+/* --------------------------------------------------------------------------
+   3. Les horaires. La grille de la feuille de départ.
+   -------------------------------------------------------------------------- */
+.heures {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 1px; background: var(--trait); border: 1px solid var(--trait);
+}
+.heure {
+  appearance: none; border: 0; cursor: pointer;
+  background: var(--papier-clair); color: var(--encre);
+  padding: 18px 8px 16px; text-align: center;
+  font-family: var(--mono); font-size: 1.06rem; font-weight: 500;
+  letter-spacing: 0.02em; font-variant-numeric: tabular-nums lining-nums;
+  transition: background var(--transition), color var(--transition);
+}
+.heure:hover { background: var(--papier-creux); }
+.heure.est-choisi { background: var(--encre); color: var(--papier-clair); }
+.heure.est-choisi::after {
+  content: ""; display: block; width: 14px; height: 2px;
+  background: var(--rouge); margin: 7px auto 0;
+}
+.heure:focus-visible { outline: 2px solid var(--rouge); outline-offset: -3px; }
+/* Les cases de fin de ligne sont complétées à vide : une feuille de départ
+   est un rectangle réglé, pas une grille à trous. Sans elles, le fond des
+   filets apparaît en aplat gris là où il manque des cases. */
+.heure--vide { background: var(--papier-clair); cursor: default; }
+
+/* --------------------------------------------------------------------------
+   4. Les formules. Des lignes réglées, pas trois cartes identiques : le
+   client compare une durée et un prix, deux colonnes de chiffres suffisent.
+   -------------------------------------------------------------------------- */
+.formules { border-top: 1px solid var(--trait); }
+.formule {
+  width: 100%; display: grid; gap: 2px 14px; align-items: baseline;
+  grid-template-columns: 1fr auto;
+  padding: 15px 2px; background: none; border: 0; cursor: pointer;
+  border-bottom: 1px solid var(--trait); text-align: left; color: var(--encre);
+  transition: background var(--transition);
+}
+.formule:hover { background: var(--papier-clair); }
+.formule__nom { font-family: var(--ui); font-size: 1.02rem; font-weight: 560; letter-spacing: -0.015em; }
+.formule__prix {
+  font-family: var(--mono); font-size: 1.02rem; font-weight: 600;
+  font-variant-numeric: tabular-nums lining-nums; grid-row: 1; grid-column: 2;
+}
+.formule__detail {
+  grid-column: 1 / -1;
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--encre-tenue);
+}
+.formule.est-choisi { background: var(--encre); color: var(--papier-clair); padding-inline: 14px; }
+.formule.est-choisi .formule__detail { color: var(--sur-vert-tenu); }
+.formule[disabled] { cursor: not-allowed; opacity: 0.45; }
+.formule[disabled] .formule__nom { text-decoration: line-through; }
+.formule__empeche {
+  grid-column: 1 / -1; font-family: var(--ui); font-size: 0.85rem;
+  letter-spacing: 0; text-transform: none; color: var(--rouge-texte);
+}
+
+/* --------------------------------------------------------------------------
+   5. Coordonnées et récapitulatif
+   -------------------------------------------------------------------------- */
+.tee .champs { gap: var(--e4); }
+@media (min-width: 620px) { .tee .champs { grid-template-columns: 1fr 1fr; } }
+
+/* Le récapitulatif reprend le fond profond des moments forts du site. */
+.recap {
+  background: var(--vert-nuit); color: var(--sur-vert); padding: var(--e4);
+  border-left: 3px solid var(--rouge); margin-top: var(--e4);
+}
+.recap__titre {
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--sur-vert-tenu); margin: 0 0 12px;
+}
+.recap__ligne {
+  display: flex; justify-content: space-between; gap: var(--e3);
+  padding: 8px 0; border-bottom: 1px solid var(--trait-clair);
+}
+.recap__ligne:last-child { border-bottom: 0; }
+.recap__intitule {
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--sur-vert-tenu);
+}
+.recap__valeur { text-align: right; font-weight: 560; }
+.recap__valeur--chiffre { font-family: var(--mono); font-variant-numeric: tabular-nums lining-nums; }
+
+/* --------------------------------------------------------------------------
+   6. États : vide, chargement, erreur, confirmation
+   -------------------------------------------------------------------------- */
+.tee__vide, .tee__erreur {
+  border: 1px solid var(--trait); background: var(--papier-clair);
+  padding: var(--e5) var(--e4); text-align: center;
+}
+.tee__erreur { border-left: 3px solid var(--rouge); text-align: left; }
+.tee__vide p, .tee__erreur p { margin: 0 0 var(--e3); color: var(--encre-douce); }
+.tee__vide p:last-child, .tee__erreur p:last-child { margin-bottom: 0; }
+
+.squelette { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+.squelette span {
+  display: block; height: 56px; background: var(--papier-creux);
+  animation: respire 1.4s ease-in-out infinite;
+}
+@keyframes respire { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .squelette span { animation: none; } }
+
+.confirmation { border: 1px solid var(--trait); background: var(--papier-clair); padding: var(--e5) var(--e4); }
+.confirmation__marque {
+  width: 46px; height: 46px; display: grid; place-items: center;
+  background: var(--vert-vif); color: #fff; margin-bottom: var(--e4);
+}
+.confirmation h2 { font-size: var(--t-h2); letter-spacing: var(--ls-h2); margin: 0 0 var(--e3); }
+.confirmation__suite { margin-top: var(--e4); color: var(--encre-douce); font-size: 0.95rem; }
+.confirmation__suite a { color: var(--encre); }
+
+/* --------------------------------------------------------------------------
+   7. Barre de rappel mobile. Le choix en cours reste visible quand on
+   descend remplir ses coordonnées.
+   -------------------------------------------------------------------------- */
+.rappel {
+  position: sticky; bottom: 0; z-index: 30;
+  display: none; align-items: center; gap: var(--e3);
+  padding: 11px var(--gouttiere);
+  background: var(--encre); color: var(--papier-clair);
+  border-top: 2px solid var(--rouge);
+}
+.rappel.est-visible { display: flex; }
+.rappel__texte {
+  min-width: 0;
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em;
+  text-transform: uppercase; line-height: 1.45;
+}
+.rappel__prix {
+  margin-left: auto; flex: none; white-space: nowrap;
+  font-family: var(--mono); font-weight: 600; font-size: 0.95rem;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+@media (min-width: 760px) { .rappel { display: none !important; } }
+
+/* --------------------------------------------------------------------------
+   8. Admin. Même langage, densité supérieure : Nils lit son planning d'un
+   coup d'œil, pouce sur l'écran, souvent en plein soleil.
+   -------------------------------------------------------------------------- */
+.admin { padding-block: var(--e5) var(--e8); }
+.admin__barre {
+  display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap;
+  padding-bottom: var(--e4); border-bottom: 1px solid var(--trait); margin-bottom: var(--e5);
+}
+.admin__barre h1 { font-size: 1.5rem; letter-spacing: -0.03em; margin: 0; }
+.admin__barre .bouton { margin-left: auto; }
+
+.connexion { max-width: 380px; margin: var(--e7) auto; }
+.connexion h1 { font-size: var(--t-h2); letter-spacing: var(--ls-h2); margin: 0 0 var(--e3); }
+.connexion p { color: var(--encre-douce); margin: 0 0 var(--e4); }
+
+/* Une journée du planning : plaque de lieu, puis les lignes d'horaire. */
+.jour-admin { border: 1px solid var(--trait); background: var(--papier-clair); margin-bottom: var(--e4); }
+/* Sur un téléphone, la date, le lieu et les deux boutons ne tiennent pas
+   sur une ligne : les boutons passent dessous plutôt que d'écraser le texte
+   en colonne de quatre mots. */
+.jour-admin__entete {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 13px 15px; border-bottom: 1px solid var(--trait);
+}
+.jour-admin__identite { flex: 1 1 200px; min-width: 0; }
+.jour-admin__pastille { width: 8px; height: 30px; flex: none; background: var(--vert-vif); }
+.jour-admin[data-teinte="sable"] .jour-admin__pastille { background: var(--sable); }
+.jour-admin__date { font-family: var(--display); font-weight: 650; letter-spacing: -0.02em; }
+.jour-admin__lieu {
+  display: block; font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre-tenue); margin-top: 2px;
+}
+.jour-admin__outils { margin-left: auto; display: flex; gap: 6px; flex: none; }
+
+.jour-admin.est-masquee { opacity: 0.6; }
+.jour-admin.est-masquee .jour-admin__date::after {
+  content: " · masquée"; font-family: var(--mono); font-size: 0.7rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--rouge-texte);
+}
+
+/* Bouton d'action minuscule, sans pilule : on est dans un outil, pas sur
+   une page de vente. */
+.outil {
+  appearance: none; background: none; border: 1px solid var(--trait-fort);
+  color: var(--encre-douce); cursor: pointer; padding: 6px 9px;
+  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase;
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+}
+.outil:hover { border-color: var(--encre); color: var(--encre); }
+.outil--danger:hover { border-color: var(--rouge); background: var(--rouge); color: #fff; }
+
+.ligne-creneau {
+  display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+  padding: 11px 15px; border-bottom: 1px solid var(--trait);
+}
+.ligne-creneau:last-child { border-bottom: 0; }
+.ligne-creneau__heure {
+  font-family: var(--mono); font-size: 1rem; font-weight: 600; flex: none; width: 58px;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+/* 60 px de base suffisent : la ligne libre tient alors d'un bloc, et seules
+   les lignes réservées — qui portent trois lignes de détail — font passer
+   les boutons dessous. Le planning reste compact là où il n'a rien à dire. */
+.ligne-creneau__etat { flex: 1 1 60px; min-width: 0; padding-top: 1px; }
+.ligne-creneau__etat > * + * { margin-top: 2px; }
+.ligne-creneau__libre {
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--vert-fonce);
+}
+.ligne-creneau__client { font-weight: 560; overflow-wrap: anywhere; }
+.ligne-creneau__detail { font-size: 0.84rem; color: var(--encre-douce); }
+.ligne-creneau__detail a { color: var(--encre-douce); }
+.ligne-creneau__outils { margin-left: auto; display: flex; gap: 6px; flex: none; }
+
+/* La ligne réservée est plus haute que les autres : on garde l'heure alignée
+   sur le nom du client, pas centrée sur trois lignes de détail. */
+.ligne-creneau.est-reserve .ligne-creneau__heure { padding-top: 1px; }
+.ligne-creneau.est-reserve { background: var(--vert-voile); }
+.ligne-creneau.est-suite { background: var(--vert-voile); opacity: 0.75; }
+.ligne-creneau.est-suite .ligne-creneau__etat {
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--encre-tenue);
+}
+
+.ajout-creneaux { display: flex; gap: 8px; padding: 12px 15px; background: var(--papier-creux); }
+.ajout-creneaux input {
+  flex: 1; min-width: 0; font-family: var(--mono); font-size: 0.95rem;
+  padding: 10px 11px; border: 1px solid var(--trait-fort); background: var(--papier-clair);
+  color: var(--encre); border-radius: var(--r-net);
+}
+.ajout-creneaux input:focus { outline: none; border-color: var(--rouge); }
+
+.nouvelle { border: 1px solid var(--trait-fort); background: var(--papier-clair); padding: var(--e4); margin-bottom: var(--e5); }
+.nouvelle__grille { display: grid; gap: var(--e3); }
+@media (min-width: 620px) { .nouvelle__grille { grid-template-columns: 1fr 1fr; } }
+.nouvelle input, .nouvelle select {
+  width: 100%; font-family: var(--ui); font-size: 1rem; padding: 12px;
+  border: 1px solid var(--trait-fort); background: var(--papier-clair);
+  color: var(--encre); border-radius: var(--r-net);
+}
+.nouvelle label {
+  display: block; margin-bottom: 5px;
+  font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--encre-douce);
+}
+
+.message-outil { padding: 12px 14px; border-left: 3px solid var(--vert-vif); background: var(--vert-voile); margin-bottom: var(--e4); }
+.message-outil--erreur { border-color: var(--rouge); background: var(--rouge-voile); }
+.message-outil p { margin: 0; font-size: 0.95rem; }
