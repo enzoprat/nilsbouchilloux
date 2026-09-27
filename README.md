@@ -71,6 +71,18 @@ Il ne fonctionne qu'une fois les variables d'environnement renseignées sur
 Vercel. Sans elles, le site continue de marcher exactement comme avant et les
 deux pages concernées affichent un message explicite.
 
+## Une commande à lancer avant de committer une page
+
+```bash
+python3 sitemap-lastmod.py --ecrire
+```
+
+Elle remet les `lastmod` de `sitemap.xml` en accord avec l'historique git.
+Une date figée dit à Google que rien n'a changé, et une date inventée
+l'expose à être ignorée pour tout le site. Sans la commande, l'oubli est
+garanti : il s'est produit quinze minutes après avoir corrigé le problème
+à la main.
+
 ## Mise en ligne
 
 Site statique : il se sert tel quel. Avant la bascule DNS, vérifier l'absence
