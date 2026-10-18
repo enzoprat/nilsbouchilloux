@@ -1159,7 +1159,12 @@ a.reglure:hover .reglure__titre { color: var(--rouge-texte); }
 .pied__liste a:hover { color: var(--sur-vert); padding-left: 6px; }
 .pied__bas { margin-top: var(--e5); font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.05em; color: var(--sur-vert-tenu); display: grid; gap: 8px; line-height: 1.7; }
 .pied__bas p { margin: 0; }
-.pied__bas a { color: var(--sur-vert-doux); }
+/* Le crédit et les mentions du bas de pied sont volontairement discrets.
+   Discret ne veut pas dire inerte : sans état de survol, rien ne signale
+   qu'il s'agit de liens. Le focus clavier, lui, est couvert par la règle
+   :focus-visible globale. */
+.pied__bas a { color: var(--sur-vert-doux); transition: color var(--transition); }
+.pied__bas a:hover { color: var(--sur-vert); }
 .pied__reseaux { display: flex; gap: 8px; margin-top: var(--e4); }
 .pied__reseaux a { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--trait-clair-fort); color: var(--sur-vert-doux); transition: background var(--transition), color var(--transition); }
 .pied__reseaux a:hover { background: var(--sur-vert); color: var(--vert-nuit); }

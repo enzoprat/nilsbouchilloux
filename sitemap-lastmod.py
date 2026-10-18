@@ -6,6 +6,12 @@ et ment : c'est arrivé le 27 septembre 2026, quinze minutes après avoir
 corrigé le même défaut à la main. Une règle écrite dans un commentaire ne
 suffit pas, il faut une commande.
 
+Les commits de gabarit sont ignorés. Changer un crédit de pied de page ou
+un lien de navigation ne modifie pas le contenu d'une page : annoncer la
+date du jour dirait à Google que les sept pages ont changé de fond, ce qui
+est le faux signal même qu'on cherche à éviter. Un commit dont le message
+contient [gabarit] ne déplace donc aucune date.
+
     python3 sitemap-lastmod.py          affiche ce qui changerait
     python3 sitemap-lastmod.py --ecrire applique
 
@@ -28,10 +34,23 @@ def fichier_de(url):
     return RACINE / (chemin + "/index.html" if chemin else "index.html")
 
 
+GABARIT = "[gabarit]"
+
+
 def date_git(fichier):
-    r = subprocess.run(["git", "log", "-1", "--format=%cs", "--", str(fichier)],
+    """Date du dernier commit de contenu touchant ce fichier.
+
+    On lit l'historique du fichier et on retient le premier commit dont le
+    message ne porte pas le marqueur de gabarit.
+    """
+    r = subprocess.run(["git", "log", "--format=%cs%x1f%s", "--", str(fichier)],
                        cwd=RACINE, capture_output=True, text=True)
-    return r.stdout.strip() or None
+    for ligne in r.stdout.splitlines():
+        date, _, sujet = ligne.partition("\x1f")
+        if GABARIT in sujet:
+            continue
+        return date.strip() or None
+    return None
 
 
 def main():
