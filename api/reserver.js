@@ -155,7 +155,7 @@ function emailPourClient(r) {
     'Un empêchement, une question, un retard : appelez ou écrivez au ' +
     '<a href="tel:+33682377506" style="color:#12160F;font-family:' + MONO + '">06 82 37 75 06</a>.' +
     '<br><br>Prévoyez une tenue souple et des chaussures plates. Le matériel peut être prêté, ' +
-    'dites-le avant la séance. Les balles de practice et l\'accès au parcours se règlent sur place.';
+    'dites-le avant la séance. Les balles de practice sont comprises dans le tarif.';
 
   return {
     objet: "Votre cours de golf est confirmé — " + L.dateEnFrancais(r.date, false) + " à " + heure,

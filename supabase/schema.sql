@@ -32,13 +32,19 @@ create table if not exists public.lieux (
 );
 
 insert into public.lieux (code, libelle, ville, teinte, ordre) values
-  ('cestas', 'Golf de Cestas',  'Cestas',   'vert',  1),
-  ('barena', 'Barena Golf',     'Mérignac', 'sable', 2)
+  ('par4',   'Par 4 Golf',  'Mérignac', 'vert',  1),
+  ('barena', 'Barena Golf', 'Mérignac', 'sable', 2)
 on conflict (code) do update
   set libelle = excluded.libelle,
       ville   = excluded.ville,
       teinte  = excluded.teinte,
       ordre   = excluded.ordre;
+
+/* Un lieu retiré du site ne doit plus être proposé, mais le supprimer
+   casserait les journées passées qui le référencent. On le désactive :
+   il disparaît des listes sans effacer l'historique. */
+update public.lieux set actif = false
+ where code not in ('par4', 'barena');
 
 -- --------------------------------------------------------------------------
 -- Les formules. En base, et pas dans le JavaScript : le client envoie un
@@ -56,8 +62,8 @@ create table if not exists public.formules (
 );
 
 insert into public.formules (code, libelle, personnes, duree_minutes, prix_centimes, ordre) values
-  ('particulier-1h', 'Cours particulier',  1,  60,  7000, 1),
-  ('particulier-2h', 'Cours particulier',  1, 120, 14000, 2),
+  ('particulier-1h', 'Cours particulier',  1,  60,  8000, 1),
+  ('particulier-2h', 'Cours particulier',  1, 120, 16000, 2),
   ('duo-1h',         'Cours à deux',       2,  60,  9500, 3),
   ('duo-2h',         'Cours à deux',       2, 120, 19000, 4)
 on conflict (code) do update

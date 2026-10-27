@@ -280,7 +280,7 @@
     '</div>';
   }
 
-  /* Même règle que côté serveur : ne pas écrire « Golf de Cestas, Cestas ». */
+  /* Même règle que côté serveur : ne pas répéter la ville si le nom la porte. */
   function lieuComplet(lieu) {
     var nom = lieu.libelle || "";
     var ville = lieu.ville || "";

@@ -344,20 +344,22 @@
      chiffrée, et un lien de réservation qui préremplit le formulaire.
 
      Aucune formule inventée : les quatre sorties possibles sont exactement
-     les quatre formules affichées dans la grille tarifaire.
+     les quatre formules affichées dans la grille tarifaire, et les deux lieux
+     sont les deux sites réellement travaillés.
      ------------------------------------------------------------------------ */
   var FORMULES = {
-    heure: { nom: "Cours particulier", prix: "70 €", option: "Cours particulier, 1 h, 70 €" },
-    deuxheures: { nom: "Cours particulier de deux heures", prix: "140 €", option: "Cours particulier, 2 h, 140 €" },
+    heure: { nom: "Cours particulier", prix: "80 €", option: "Cours particulier, 1 h, 80 €" },
+    deuxheures: { nom: "Cours particulier de deux heures", prix: "160 €", option: "Cours particulier, 2 h, 160 €" },
     duo: { nom: "Cours à deux", prix: "95 €", option: "Cours à deux, 1 h, 95 €" },
     duoDeuxHeures: { nom: "Cours à deux, deux heures", prix: "190 €", option: "Cours à deux, 2 h, 190 €" }
   };
 
+  /* Deux sites depuis octobre 2026, tous deux à Mérignac et équipés d'un
+     radar. Le Par 4 est couvert, le Barena est un practice connecté : c'est
+     ce qui les départage dans le diagnostic, plus la météo que le niveau. */
   var LIEUX = {
-    argileyres: { nom: "Golf des Argileyres, à Cestas", option: "Golf des Argileyres, Cestas" },
     par4: { nom: "Par 4 Golf, à Mérignac", option: "Par 4 Golf, Mérignac" },
-    barena: { nom: "Barena Golf, à Mérignac", option: "Barena Golf, Mérignac" },
-    teynac: { nom: "Golf de Teynac, à Beychac-et-Caillau", option: "Golf de Teynac, Beychac-et-Caillau" }
+    barena: { nom: "Barena Golf, à Mérignac", option: "Barena Golf, Mérignac" }
   };
 
   function conclure(reponses) {
@@ -367,24 +369,24 @@
 
     if (format === "duo") {
       formule = deuxHeures ? FORMULES.duoDeuxHeures : FORMULES.duo;
-      lieu = niveau === "joueur" ? LIEUX.teynac : LIEUX.barena;
+      lieu = LIEUX.barena;
       pourquoi = deuxHeures
         ? "Deux heures à deux, soit 95 € chacun. On a le temps de travailler le geste au practice puis de le mettre en situation, ce qu'une heure partagée ne permet pas."
         : "Une heure à deux, soit 47,50 € chacun. Le contenu est le même qu'en individuel : c'est le temps de frappe qui se partage, pas l'enseignement. Et on apprend beaucoup en regardant l'autre se faire corriger sur un défaut qu'on a aussi.";
     } else if (deuxHeures) {
       formule = FORMULES.deuxheures;
-      lieu = niveau === "debutant" ? LIEUX.argileyres : LIEUX.teynac;
+      lieu = LIEUX.par4;
       pourquoi = niveau === "debutant"
-        ? "Deux heures pour une première fois, c'est long mais c'est ce qui permet d'enchaîner le practice et le parcours court dans la même séance, au lieu de s'arrêter juste au moment où ça commence à marcher."
-        : "Deux heures, c'est le format qui permet de corriger au practice puis d'aller vérifier sur le parcours dans la foulée. C'est là que le travail tient vraiment.";
+        ? "Deux heures pour une première fois, c'est long, mais c'est ce qui laisse le temps de poser les bases puis de les répéter assez pour qu'elles tiennent, au lieu de s'arrêter juste au moment où ça commence à marcher."
+        : "Deux heures, c'est le format qui permet de corriger au radar puis de répéter assez longtemps pour que la correction tienne. C'est là que le travail s'installe vraiment.";
     } else {
       formule = FORMULES.heure;
-      lieu = niveau === "debutant" ? LIEUX.argileyres : (niveau === "reprise" ? LIEUX.par4 : LIEUX.teynac);
+      lieu = niveau === "debutant" ? LIEUX.barena : LIEUX.par4;
       pourquoi = niveau === "debutant"
-        ? "Une heure complète pour poser les bases : la tenue du club, la posture, et assez de balles pour que le geste commence à se répéter."
+        ? "Une heure complète pour poser les bases : la tenue du club, la posture, et assez de balles pour que le geste commence à se répéter. Le Barena est le site le moins intimidant pour une première fois."
         : (niveau === "reprise"
-          ? "Une heure au radar pour commencer : on voit exactement ce qui a dérivé pendant la pause, plutôt que de le deviner. La suite se fait sur le practice ou sur le parcours."
-          : "Une heure sur le parcours plutôt que sur le practice : à votre niveau, ce sont les choix et la gestion de trou qui coûtent des coups, et ça ne se travaille pas sur un tapis.");
+          ? "Une heure au radar pour commencer : on voit exactement ce qui a dérivé pendant la pause, plutôt que de le deviner."
+          : "Une heure au radar : à votre niveau, les écarts se jouent sur des détails que l'œil ne voit pas, et que la mesure montre en trois balles.");
     }
 
     return { formule: formule, lieu: lieu, pourquoi: pourquoi };

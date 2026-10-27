@@ -264,8 +264,8 @@ function normaliserHeure(brut) {
   return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
 }
 
-/* « Golf de Cestas, Cestas » se lit mal : la ville est déjà dans le nom.
-   On ne l'ajoute que quand elle manque, comme pour « Barena Golf ». */
+/* « Barena Golf, Mérignac » se lit bien, « Golf de Mérignac, Mérignac »
+   non : on n'ajoute la ville que lorsqu'elle manque déjà au nom. */
 function lieuComplet(libelle, ville) {
   var nom = String(libelle || "");
   var v = String(ville || "");
