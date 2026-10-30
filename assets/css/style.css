@@ -798,6 +798,13 @@ a.reglure:hover .reglure__titre { color: var(--rouge-texte); }
 .fiche-lieu { display: none; }
 .fiche-lieu.est-active { display: block; animation: apparition 380ms cubic-bezier(0.32, 0.72, 0, 1); }
 @keyframes apparition { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* Le logo du lieu, quand il en existe un. Petit et posé à côté de
+   l'adresse : c'est une marque de reconnaissance, pas une enseigne. Le
+   disque blanc du logo tranche sur le fond nuit, on lui laisse sa forme. */
+.fiche-lieu__entete { display: flex; align-items: center; gap: 14px; margin-bottom: var(--e3); }
+.fiche-lieu__logo { width: 46px; height: 46px; flex: none; border-radius: var(--r-pill); }
+.fiche-lieu__entete .fiche-lieu__adresse { margin: 0; }
+
 .fiche-lieu__adresse {
   font-family: var(--mono); font-size: var(--t-label); letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--vert-clair); font-style: normal;

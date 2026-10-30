@@ -39,7 +39,7 @@
   "description": "Enseignant de golf diplômé BPJEPS à Bordeaux. Cours particuliers au radar, initiation et préparation de la carte verte, au Par 4 Golf et au Barena Golf, à Mérignac.",
   "url": "https://www.nilsbouchilloux.fr/",
   "telephone": "+33682377506",
-  "priceRange": "70€–190€",
+  "priceRange": "80€–190€",
   "currenciesAccepted": "EUR",
   "address": {
     "@type": "PostalAddress",
@@ -234,11 +234,11 @@
           <span class="tech">Âge de ses débuts</span>
         </div>
         <div class="carte-score__case">
-          <span class="carte-score__valeur">4</span>
+          <span class="carte-score__valeur">2</span>
           <span class="tech">Sites d'enseignement</span>
         </div>
         <div class="carte-score__case">
-          <span class="carte-score__valeur">70<sup>€</sup></span>
+          <span class="carte-score__valeur">80<sup>€</sup></span>
           <span class="tech">L'heure de cours</span>
         </div>
       </div>
@@ -331,7 +331,7 @@
         <div class="registre__ligne">
           <span class="registre__critere">Lieu</span>
           <span class="registre__valeur">Le site du club, quel que soit le travail à faire</span>
-          <span class="registre__valeur registre__valeur--fort">Quatre sites, choisis selon la séance</span>
+          <span class="registre__valeur registre__valeur--fort">Deux sites, à dix minutes l'un de l'autre</span>
         </div>
         <div class="registre__ligne">
           <span class="registre__critere">Parcours</span>
@@ -519,7 +519,7 @@
   </section>
 
   <!-- ====================================================================
-       06. Les quatre sites. Chaque lieu a son visuel, une photo quand
+       06. Les deux sites. Chaque lieu a son visuel, une photo quand
        elle existe, un schéma dessiné sinon, sa fiche de données et sa
        position sur le plan. On clique une ligne, tout change ensemble.
        ==================================================================== -->
@@ -554,26 +554,10 @@
           </figure>
 
           <figure class="vue" data-vue="barena" hidden>
-            <div class="vue__cadre">
-              <svg viewBox="0 0 480 700" role="img" aria-labelledby="t-barena">
-                <title id="t-barena">Schéma d'un practice connecté : postes de frappe alignés face à des cibles annulaires étagées, et relevé de données de frappe</title>
-                <g fill="none" stroke="#EFEFE6" stroke-opacity=".16" stroke-width="1">
-                  <ellipse cx="240" cy="300" rx="26" ry="10"/><ellipse cx="240" cy="300" rx="52" ry="20"/>
-                  <ellipse cx="240" cy="216" rx="34" ry="13"/><ellipse cx="240" cy="216" rx="68" ry="26"/>
-                  <ellipse cx="240" cy="146" rx="44" ry="17"/><ellipse cx="240" cy="146" rx="88" ry="34"/>
-                </g>
-                <circle cx="240" cy="300" r="5" fill="#C43D28"/>
-                <g stroke="#EFEFE6" stroke-opacity=".26" stroke-width="1">
-                  <path d="M60 486h360M60 486v34M150 486v34M240 486v34M330 486v34M420 486v34"/>
-                </g>
-                <path d="M240 486C240 420 240 356 240 306" fill="none" stroke="#86C7A2" stroke-opacity=".5" stroke-width="1.3" stroke-dasharray="3 6"/>
-                <rect x="60" y="536" width="164" height="46" fill="none" stroke="#EFEFE6" stroke-opacity=".22"/>
-                <g font-family="ui-monospace, monospace" font-size="10" letter-spacing="1.4" fill="#EFEFE6" fill-opacity=".5">
-                  <text x="70" y="554">VITESSE  98 MPH</text><text x="70" y="572">PORTÉE   142 M</text>
-                  <text x="300" y="310">50 M</text><text x="330" y="222">100 M</text><text x="356" y="152">150 M</text>
-                  <text x="60" y="470">POSTES DE FRAPPE</text>
-                </g>
-              </svg>
+            <div class="vue__cadre vue__cadre--photo">
+              <img src="/assets/img/barena-merignac-practice-connecte.webp"
+                alt="Le practice connecté du Barena à Mérignac à la tombée du jour : deux étages de postes de frappe éclairés, chacun équipé d'un écran de mesure"
+                width="900" height="900" loading="lazy" decoding="async">
             </div>
             <figcaption class="vue__plaque">
               <span class="tech">Site 02 · Mérignac</span>
@@ -599,7 +583,11 @@
 
 
           <div class="fiche-lieu est-active" id="fiche-par4" role="tabpanel" aria-labelledby="onglet-par4" data-fiche="par4">
-            <address class="fiche-lieu__adresse">15 rue Faraday · 33700 Mérignac</address>
+            <div class="fiche-lieu__entete">
+              <img class="fiche-lieu__logo" src="/assets/img/logo-par4-golf.webp"
+                alt="Logo du Par 4 Golf" width="320" height="320" loading="lazy" decoding="async">
+              <address class="fiche-lieu__adresse">15 rue Faraday · 33700 Mérignac</address>
+            </div>
             <ul class="fiche-lieu__liste">
               <li><span class="tech">Sur place</span><span>Baie de frappe couverte, radar et atelier de fitting</span></li>
               <li><span class="tech">On y fait</span><span>Cours au radar, analyse des trajectoires et des données de frappe</span></li>
@@ -804,12 +792,11 @@
             <div class="question__interieur">
               <div class="question__reponse">
                 <p>
-                  À Bordeaux, un cours particulier de golf se situe entre 70 € et
-                  190 € selon la durée et le nombre de participants. Chez moi :
-                  80 € l'heure en individuel et 160 € pour deux heures ; à deux,
-                  95 € l'heure et 190 € pour deux heures, soit 47,50 € par
-                  personne. Les balles de practice sont comprises, et chaque
-                  séance se fait au radar.
+                  Chez moi, un cours particulier coûte 80 € l'heure en individuel
+                  et 160 € pour deux heures. À deux, la séance est à 95 € l'heure,
+                  soit 47,50 € par personne, et 190 € pour deux heures. Les balles
+                  de practice sont comprises et chaque séance se fait au radar :
+                  il n'y a pas de supplément à prévoir.
                 </p>
               </div>
             </div>
