@@ -1,0 +1,253 @@
+/* ==========================================================================
+   Nils Bouchilloux — habillage de l'espace de gestion
+
+   Chargée après style.css et reservation.css, et uniquement par /admin/.
+   La page publique garde sa direction artistique « carnet de parcours »
+   sans en être affectée d'une ligne.
+
+   Pourquoi un traitement différent ici. Le site vend une méthode : son
+   austérité de carte de score est un argument. L'admin ne vend rien, c'est
+   un outil que Nils ouvre debout sur un practice, souvent en plein soleil,
+   pour répondre à une question simple : qu'est-ce que je fais jeudi ?
+
+   D'où un registre d'application plutôt que d'imprimé : surfaces claires
+   et translucides, angles franchement arrondis, ombres très douces, et des
+   libellés en bas de casse plutôt qu'en chasse fixe capitale. Les données
+   — heures, prix, durées — restent en chasse fixe tabulaire : c'est ce qui
+   se lit d'un coup d'œil, et c'est le seul endroit où ça vaut la peine.
+   ========================================================================== */
+
+.admin {
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-pleine: #FFFFFF;
+  --surface-creuse: rgba(118, 128, 116, 0.07);
+  --bord: rgba(18, 22, 15, 0.09);
+  --bord-fort: rgba(18, 22, 15, 0.16);
+  --flou: saturate(180%) blur(22px);
+  --r-carte: 18px;
+  --r-champ: 12px;
+  --ombre: 0 1px 2px rgba(12, 31, 22, 0.04), 0 10px 30px -18px rgba(12, 31, 22, 0.28);
+  --ombre-haute: 0 1px 2px rgba(12, 31, 22, 0.05), 0 20px 48px -24px rgba(12, 31, 22, 0.4);
+
+  background:
+    radial-gradient(120% 70% at 12% -8%, rgba(44, 127, 85, 0.10), transparent 60%),
+    radial-gradient(90% 60% at 94% 4%, rgba(196, 61, 40, 0.07), transparent 58%),
+    #F6F5F1;
+  min-height: 100vh;
+  padding-block: var(--e5) var(--e8);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   Typographie : on sort du tout-capitale en chasse fixe.
+   -------------------------------------------------------------------------- */
+.admin h1 { font-family: var(--display); font-weight: 700; letter-spacing: -0.035em; }
+.admin .tech,
+.admin .panneau__titre,
+.admin .reglage__detail,
+.admin .ligne-creneau__libre,
+.admin .reglage__champ > span,
+.admin .nouvelle label,
+.admin .reglage-nouveau label {
+  font-family: var(--ui);
+  font-size: 0.78rem;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  font-weight: 560;
+  color: var(--encre-tenue);
+}
+/* Les données gardent la chasse fixe tabulaire : heures, prix, durées. */
+.admin .ligne-creneau__heure,
+.admin .creneau__heure,
+.admin .jourcol__date,
+.admin .plage__heures,
+.admin .reglage__prix {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.01em;
+}
+
+/* --------------------------------------------------------------------------
+   Barre de tête
+   -------------------------------------------------------------------------- */
+.admin__barre {
+  display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap;
+  padding: 16px 18px; margin-bottom: var(--e4);
+  background: var(--surface); -webkit-backdrop-filter: var(--flou); backdrop-filter: var(--flou);
+  border: 1px solid var(--bord); border-radius: var(--r-carte); box-shadow: var(--ombre);
+}
+.admin__barre h1 { font-size: 1.45rem; margin: 0; }
+.admin__barre .repere { margin-bottom: 4px; }
+
+/* --------------------------------------------------------------------------
+   Cartes, panneaux, formulaires
+   -------------------------------------------------------------------------- */
+.admin .nouvelle,
+.admin .panneau,
+.admin .jour-admin,
+.admin .tee__vide,
+.admin .semaine {
+  background: var(--surface); -webkit-backdrop-filter: var(--flou); backdrop-filter: var(--flou);
+  border: 1px solid var(--bord); border-radius: var(--r-carte);
+  box-shadow: var(--ombre); margin-bottom: var(--e4);
+}
+.admin .nouvelle { padding: 18px; }
+.admin .panneau__titre { padding: 16px 18px; font-size: 0.95rem; font-weight: 600; color: var(--encre); }
+.admin .panneau__corps { padding: 0 18px 18px; border-top: 1px solid var(--bord); }
+
+.admin input, .admin select, .admin textarea {
+  border-radius: var(--r-champ) !important;
+  border: 1px solid var(--bord-fort) !important;
+  background: var(--surface-pleine) !important;
+  padding: 12px 13px !important;
+  font-family: var(--ui);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.admin input:focus, .admin select:focus, .admin textarea:focus {
+  outline: none !important;
+  border-color: var(--vert-vif) !important;
+  box-shadow: 0 0 0 4px rgba(44, 127, 85, 0.14);
+}
+
+/* Boutons : pleinement arrondis, sans la dureté du noir pur. */
+.admin .bouton { border-radius: var(--r-pill); font-weight: 580; }
+.admin .bouton--plein { background: var(--vert); border-color: var(--vert); }
+.admin .bouton--plein:hover { background: var(--vert-surface); border-color: var(--vert-surface); }
+.admin .bouton--contour {
+  background: var(--surface-pleine); border-color: var(--bord-fort);
+  -webkit-backdrop-filter: var(--flou); backdrop-filter: var(--flou);
+}
+
+/* L'outil : une pastille translucide, pas une case à cocher administrative. */
+.admin .outil {
+  border-radius: var(--r-pill); border: 1px solid var(--bord-fort);
+  background: var(--surface-pleine); color: var(--encre-douce);
+  font-family: var(--ui); font-size: 0.78rem; font-weight: 560;
+  letter-spacing: -0.005em; text-transform: none; padding: 8px 13px;
+}
+.admin .outil:hover { background: var(--encre); border-color: var(--encre); color: #fff; }
+.admin .outil--danger:hover { background: var(--rouge); border-color: var(--rouge); }
+.admin .outil--doux { border-style: dashed; }
+
+/* --------------------------------------------------------------------------
+   La semaine type
+   -------------------------------------------------------------------------- */
+.admin .semaine { padding: 18px; }
+.admin .semaine__entete { display: flex; align-items: baseline; gap: var(--e3); flex-wrap: wrap; margin-bottom: var(--e3); }
+.admin .semaine__entete h2 { font-size: 1.05rem; font-weight: 640; letter-spacing: -0.02em; margin: 0; }
+.admin .semaine__note { font-size: 0.88rem; color: var(--encre-douce); margin: 0 0 var(--e4); max-width: 58ch; }
+
+.admin .plages { display: grid; gap: 8px; margin-bottom: var(--e4); }
+.admin .plage {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: var(--r-champ);
+  background: var(--surface-creuse); border: 1px solid transparent;
+}
+.admin .plage.est-inactive { opacity: 0.5; }
+.admin .plage__jour { flex: 0 0 86px; font-weight: 620; letter-spacing: -0.015em; text-transform: capitalize; }
+.admin .plage__heures { flex: 0 0 118px; font-size: 0.95rem; font-weight: 560; }
+.admin .plage__lieu { flex: 1 1 110px; min-width: 0; font-size: 0.88rem; color: var(--encre-douce); }
+.admin .plage__pastille {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 7px; background: var(--vert-vif); vertical-align: middle;
+}
+.admin .plage__pastille[data-teinte="sable"] { background: var(--sable); }
+.admin .plage__compte { flex: none; font-size: 0.8rem; color: var(--encre-tenue); }
+.admin .plage__outils { margin-left: auto; display: flex; gap: 6px; flex: none; }
+
+.admin .semaine__pied { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; padding-top: var(--e3); border-top: 1px solid var(--bord); }
+.admin .semaine__pied select { flex: 0 1 180px; }
+
+/* --------------------------------------------------------------------------
+   Le planning hebdomadaire : une colonne par jour.
+   -------------------------------------------------------------------------- */
+.admin .semainier {
+  display: grid; gap: 10px; margin-bottom: var(--e5);
+  grid-template-columns: repeat(auto-fit, minmax(186px, 1fr));
+}
+.admin .jourcol {
+  background: var(--surface); -webkit-backdrop-filter: var(--flou); backdrop-filter: var(--flou);
+  border: 1px solid var(--bord); border-radius: var(--r-carte);
+  box-shadow: var(--ombre); overflow: hidden; display: flex; flex-direction: column;
+}
+.admin .jourcol.est-vide { background: rgba(255, 255, 255, 0.4); box-shadow: none; }
+.admin .jourcol.est-aujourdhui { border-color: var(--vert-vif); box-shadow: var(--ombre-haute); }
+.admin .jourcol__tete { padding: 13px 14px 11px; border-bottom: 1px solid var(--bord); }
+.admin .jourcol__nom { font-size: 0.8rem; font-weight: 600; color: var(--encre-tenue); text-transform: capitalize; }
+.admin .jourcol__date { display: block; font-size: 1.5rem; font-weight: 700; line-height: 1.1; margin-top: 1px; }
+.admin .jourcol__lieu { display: block; margin-top: 5px; font-size: 0.8rem; color: var(--encre-douce); }
+.admin .jourcol__corps { padding: 9px; display: grid; gap: 6px; flex: 1; }
+
+.admin .creneau {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: 11px;
+  background: var(--surface-creuse); border: 1px solid transparent;
+  text-align: left; width: 100%; cursor: default;
+}
+.admin .creneau__heure { flex: none; font-size: 0.92rem; font-weight: 600; }
+.admin .creneau__etat { flex: 1; min-width: 0; font-size: 0.8rem; color: var(--encre-tenue); }
+.admin .creneau__retirer {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer;
+  background: transparent; color: var(--encre-tenue); font-size: 16px; line-height: 1;
+  opacity: 0; transition: opacity var(--transition), background var(--transition);
+}
+.admin .creneau:hover .creneau__retirer { opacity: 1; }
+.admin .creneau__retirer:focus-visible { opacity: 1; }
+.admin .creneau__retirer:hover { background: var(--rouge-voile); color: var(--rouge-texte); }
+/* Sans survol — donc sur le téléphone de Nils, qui est l'usage principal —
+   le bouton resterait invisible tout en restant cliquable. Invisible et
+   actif est pire que visible : on le montre. */
+@media (hover: none) {
+  .admin .creneau__retirer { opacity: 0.5; }
+  .admin .creneau.est-reserve .creneau__retirer,
+  .admin .creneau.est-suite .creneau__retirer { opacity: 0.65; }
+}
+
+.admin .creneau.est-libre { background: rgba(44, 127, 85, 0.09); }
+.admin .creneau.est-libre .creneau__etat { color: var(--vert-fonce); }
+.admin .creneau.est-reserve { background: var(--encre); color: var(--papier-clair); }
+.admin .creneau.est-reserve .creneau__etat { color: rgba(239, 239, 230, 0.78); }
+.admin .creneau.est-reserve .creneau__retirer { color: rgba(239, 239, 230, 0.7); }
+.admin .creneau.est-suite { background: rgba(18, 22, 15, 0.82); color: var(--papier-clair); }
+.admin .creneau.est-suite .creneau__etat { color: rgba(239, 239, 230, 0.6); font-style: italic; }
+
+.admin .jourcol__ajout {
+  display: flex; gap: 6px; padding: 9px; border-top: 1px solid var(--bord);
+  background: rgba(255, 255, 255, 0.4);
+}
+.admin .jourcol__ajout input { flex: 1; min-width: 0; padding: 9px 10px !important; font-size: 0.88rem; }
+.admin .jourcol__repos { padding: 22px 14px; text-align: center; font-size: 0.85rem; color: var(--encre-tenue); }
+
+/* --------------------------------------------------------------------------
+   Le client sous un créneau réservé
+   -------------------------------------------------------------------------- */
+.admin .client { padding: 2px 10px 10px; display: grid; gap: 3px; }
+.admin .client__nom { font-size: 0.9rem; font-weight: 600; }
+.admin .client__ligne { font-size: 0.82rem; color: var(--encre-douce); overflow-wrap: anywhere; }
+.admin .client__ligne a { color: var(--vert-fonce); text-decoration: none; }
+.admin .client__ligne a:hover { text-decoration: underline; }
+
+/* --------------------------------------------------------------------------
+   Connexion
+   -------------------------------------------------------------------------- */
+.admin .connexion {
+  background: var(--surface); -webkit-backdrop-filter: var(--flou); backdrop-filter: var(--flou);
+  border: 1px solid var(--bord); border-radius: 22px; box-shadow: var(--ombre-haute);
+  padding: 30px 26px; max-width: 390px; margin: var(--e7) auto;
+}
+.admin .connexion h1 { font-size: 1.7rem; }
+
+.admin .message-outil {
+  border: 1px solid var(--bord); border-left: 3px solid var(--vert-vif);
+  border-radius: var(--r-champ); background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: var(--flou); backdrop-filter: var(--flou);
+  box-shadow: var(--ombre);
+}
+.admin .message-outil--erreur { border-left-color: var(--rouge); }
+
+@media (prefers-reduced-transparency: reduce) {
+  .admin .admin__barre, .admin .nouvelle, .admin .panneau, .admin .jourcol,
+  .admin .semaine, .admin .connexion, .admin .message-outil {
+    -webkit-backdrop-filter: none; backdrop-filter: none; background: #FFFFFF;
+  }
+}

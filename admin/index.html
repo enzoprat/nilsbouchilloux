@@ -9,6 +9,7 @@
 
 <link rel="stylesheet" href="/assets/css/style.css">
 <link rel="stylesheet" href="/assets/css/reservation.css">
+<link rel="stylesheet" href="/assets/css/admin.css">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="apple-touch-icon" href="/assets/img/favicon-180.png">
 <meta name="theme-color" content="#12362A">
@@ -102,6 +103,78 @@
           </p>
         </form>
       </div>
+
+      <!-- ================================================================
+           La semaine type : les plages où Nils donne des cours particuliers.
+           Un gabarit qu'on applique pour fabriquer de vraies journées, pas
+           une règle permanente qu'il faudrait interpréter à la lecture.
+           ================================================================ -->
+      <section class="semaine" data-semaine>
+        <div class="semaine__entete">
+          <h2>Ma semaine type</h2>
+          <span class="tech" data-semaine-compte></span>
+        </div>
+        <p class="semaine__note">
+          Vos plages de disponibilité pour les cours particuliers. Appliquez-les
+          pour fabriquer les journées des prochaines semaines : elles restent
+          ensuite modifiables une par une, et rien de déjà réservé n'est touché.
+        </p>
+
+        <div class="plages" data-plages></div>
+
+        <form class="reglage-nouveau" data-plage-nouvelle novalidate style="margin-top:0;padding-top:0;border:0">
+          <div class="reglage-grille">
+            <div>
+              <label for="p-jour">Jour</label>
+              <select id="p-jour">
+                <option value="1">Lundi</option>
+                <option value="2">Mardi</option>
+                <option value="3" selected>Mercredi</option>
+                <option value="4">Jeudi</option>
+                <option value="5">Vendredi</option>
+                <option value="6">Samedi</option>
+                <option value="7">Dimanche</option>
+              </select>
+            </div>
+            <div>
+              <label for="p-lieu">Lieu</label>
+              <select id="p-lieu" data-plage-lieux></select>
+            </div>
+            <div>
+              <label for="p-debut">De</label>
+              <input type="time" id="p-debut" value="10:00">
+            </div>
+            <div>
+              <label for="p-fin">À</label>
+              <input type="time" id="p-fin" value="15:00">
+            </div>
+            <div>
+              <label for="p-pas">Durée d'un créneau</label>
+              <select id="p-pas">
+                <option value="30">30 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="60" selected>1 heure</option>
+                <option value="90">1 h 30</option>
+                <option value="120">2 heures</option>
+              </select>
+            </div>
+          </div>
+          <p style="margin-top:var(--e3)">
+            <button class="bouton bouton--contour bouton--large" type="submit">Ajouter cette plage</button>
+          </p>
+        </form>
+
+        <div class="semaine__pied">
+          <label for="p-semaines" class="tech">Appliquer sur</label>
+          <select id="p-semaines">
+            <option value="2">2 semaines</option>
+            <option value="4" selected>4 semaines</option>
+            <option value="6">6 semaines</option>
+            <option value="8">8 semaines</option>
+          </select>
+          <button class="bouton bouton--plein" type="button" data-appliquer>Fabriquer les journées</button>
+        </div>
+      </section>
 
       <!-- Les journées -->
       <p class="tech" style="margin-bottom:var(--e3)">Prochaines journées</p>

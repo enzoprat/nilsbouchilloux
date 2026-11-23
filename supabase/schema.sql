@@ -124,6 +124,42 @@ create index if not exists creneaux_journee_idx on public.creneaux (journee_id, 
 create index if not exists journees_date_idx    on public.journees (date);
 
 -- --------------------------------------------------------------------------
+-- La semaine type : les plages où Nils donne des cours particuliers.
+--
+-- Ce n'est PAS une règle de disponibilité permanente. C'est un gabarit qu'on
+-- applique pour fabriquer de vraies journées, ensuite modifiables une par
+-- une. La distinction compte : le planning reste une suite de journées
+-- concrètes, pas une abstraction qu'il faudrait interpréter à la lecture.
+--
+-- jour : 1 = lundi … 7 = dimanche, comme isodow en SQL.
+-- --------------------------------------------------------------------------
+create table if not exists public.semaine_type (
+  id           uuid primary key default gen_random_uuid(),
+  jour         int  not null check (jour between 1 and 7),
+  lieu         text not null references public.lieux(code),
+  debut        time not null,
+  fin          time not null,
+  pas_minutes  int  not null default 60 check (pas_minutes between 15 and 240),
+  actif        boolean not null default true,
+  cree_le      timestamptz not null default now(),
+  check (fin > debut)
+);
+
+create index if not exists semaine_type_jour_idx on public.semaine_type (jour, debut);
+
+-- Les trois fenêtres « disponibilité cours individuel » du planning
+-- hebdomadaire de Nils. Le lieu de jeudi est à confirmer : le planning
+-- fourni ne le précise pas, il est modifiable depuis l'admin.
+insert into public.semaine_type (jour, lieu, debut, fin, pas_minutes)
+select v.jour, v.lieu, v.debut::time, v.fin::time, 60
+from (values
+  (3, 'barena', '20:00', '21:00'),
+  (4, 'barena', '10:00', '15:00'),
+  (5, 'barena', '17:00', '21:00')
+) as v(jour, lieu, debut, fin)
+where not exists (select 1 from public.semaine_type);
+
+-- --------------------------------------------------------------------------
 -- Ce que le public a le droit de voir : les journées ouvertes et à venir,
 -- dans un lieu encore actif, avec l'état de chaque créneau. Aucune donnée
 -- personnelle n'y figure.
@@ -284,6 +320,7 @@ $fn$;
 -- Fermeture. Le site ne se connecte à la base que par sa clé de service,
 -- côté serveur. Les rôles publics de Supabase n'ont donc rien à faire ici.
 -- --------------------------------------------------------------------------
+alter table public.semaine_type enable row level security;
 alter table public.lieux        enable row level security;
 alter table public.formules     enable row level security;
 alter table public.journees     enable row level security;
@@ -291,7 +328,8 @@ alter table public.creneaux     enable row level security;
 alter table public.reservations enable row level security;
 
 revoke all on public.lieux, public.formules, public.journees,
-              public.creneaux, public.reservations, public.v_creneaux_publics
+              public.creneaux, public.reservations, public.semaine_type,
+              public.v_creneaux_publics
   from anon, authenticated;
 
 revoke all on function public.reserver_creneau(uuid, text, text, text, text, text, text)
@@ -304,7 +342,8 @@ grant execute on function public.reserver_creneau(uuid, text, text, text, text, 
    service. On les écrit quand même : un projet configuré autrement échouerait
    sinon avec un « permission denied » difficile à relier à sa cause. */
 grant select, insert, update, delete
-  on public.lieux, public.formules, public.journees, public.creneaux, public.reservations
+  on public.lieux, public.formules, public.journees, public.creneaux,
+     public.reservations, public.semaine_type
   to service_role;
 grant select on public.v_creneaux_publics to service_role;
 

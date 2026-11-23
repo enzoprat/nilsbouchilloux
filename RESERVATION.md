@@ -101,6 +101,17 @@ s'ajoutent à celle qui existe.
 « Libre ». Une ligne réservée porte le nom du client, son téléphone
 cliquable, sa formule et son message.
 
+**Ma semaine type.** Les plages où vous donnez des cours particuliers —
+celles marquées « disponibilité cours individuel » sur votre planning
+hebdomadaire. Trois sont pré-remplies : mercredi 20 h–21 h, jeudi 10 h–15 h,
+vendredi 17 h–21 h. Le lieu de jeudi est à confirmer, le planning fourni ne
+le précisait pas.
+
+« Fabriquer les journées » applique le gabarit sur les prochaines semaines.
+Ce n'est pas une règle permanente : cela crée de **vraies journées**, que
+vous pouvez ensuite corriger une par une. Réappliquer n'écrase rien — les
+horaires déjà présents et les créneaux réservés ne bougent pas.
+
 **Une plage sur une journée déjà ouverte.** Sous chaque journée, une ligne
 « Plage » : de telle heure à telle heure, tous les tant. C'est le geste du
 « finalement jeudi je suis libre de 10 h à 15 h » — il remplit le champ des
@@ -153,6 +164,10 @@ PostgreSQL 17 et soumis à trente réservations simultanées du même créneau.
 Une seule est passée, les vingt-neuf autres ont été refusées proprement,
 sans laisser la moindre ligne orpheline en base.
 
+Chaque créneau libre du planning affiche la durée la plus longue encore
+réservable dessus — « 2 h max », « 1 h max » — calculée à partir de vos
+formules et de ce qui est déjà pris autour.
+
 Un cours de deux heures occupe le créneau choisi **et** tout créneau libre
 qui tombe dans les deux heures suivantes. C'est pourquoi la page ne propose
 pas toujours les quatre formules : si un cours est déjà réservé une heure
@@ -184,10 +199,14 @@ api/reserver.js              POST la réservation et les deux e-mails
 api/admin/session.js         connexion, vérification, déconnexion
 api/admin/journees.js        planning, ouvrir, masquer, supprimer une journée
 api/admin/creneaux.js        ajouter, déplacer, retirer un horaire
+api/admin/formules.js        les prestations et leurs tarifs
+api/admin/lieux.js           les structures où Nils se déplace
+api/admin/semaine.js         la semaine type, et son application
 reservation/index.html       la page publique
 admin/index.html             l'espace de Nils
 assets/js/reservation.js     le parcours client
 assets/js/admin.js           l'outil de Nils
 assets/css/reservation.css   le style des deux, chargé nulle part ailleurs
+assets/css/admin.css         l'habillage de l'admin, chargé par /admin/ seul
 supabase/schema.sql          tables, vue, transaction de réservation, droits
 ```

@@ -31,10 +31,14 @@
     formuleNouvelle: $("[data-formule-nouvelle]"),
     listeLieux: $("[data-liste-lieux]"),
     compteLieux: $("[data-compte-lieux]"),
-    lieuNouveau: $("[data-lieu-nouveau]")
+    lieuNouveau: $("[data-lieu-nouveau]"),
+    plages: $("[data-plages]"),
+    semaineCompte: $("[data-semaine-compte]"),
+    plageNouvelle: $("[data-plage-nouvelle]"),
+    plageLieux: $("[data-plage-lieux]")
   };
 
-  var etat = { lieux: [], journees: [], formules: [], tousLieux: [] };
+  var etat = { lieux: [], journees: [], formules: [], tousLieux: [], plages: [] };
 
   /* ------------------------------------------------------------------ Réseau */
   function appeler(url, options) {
@@ -84,6 +88,7 @@
     vues.espace.hidden = false;
     chargerPlanning();
     chargerReglages();
+    chargerSemaine();
   }
 
   vues.connexionFormulaire.addEventListener("submit", function (e) {
@@ -213,6 +218,7 @@
       etat.journees = r.corps.journees || [];
       remplirLieux();
       rendrePlanning();
+      if (!etat.formules.length) chargerReglages();
     }).catch(function () { dire("La connexion a échoué.", true); });
   }
 
@@ -235,167 +241,208 @@
     if (choix) vues.lieux.value = choix;
   }
 
+  /* ==========================================================================
+     Le planning, en colonnes de jours.
+
+     Une liste verticale oblige à faire défiler pour répondre à « qu'est-ce
+     que je fais jeudi ? ». Une colonne par jour répond d'un coup d'œil, et
+     c'est la forme du planning papier que Nils utilise déjà.
+
+     Les jours sans journée ouverte apparaissent quand même, en repos : leur
+     absence est une information, pas un trou.
+     ========================================================================== */
+
+  var JOURS_SEM = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  var MOIS_COURTS = ["janv", "févr", "mars", "avr", "mai", "juin", "juil", "août", "sept", "oct", "nov", "déc"];
+  var HORIZON = 14;
+
+  function dateIso(decalage) {
+    var d = new Date();
+    d.setDate(d.getDate() + decalage);
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris",
+      year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  }
+
+  function morceaux(iso) {
+    var p = String(iso).split("-");
+    return { annee: +p[0], mois: +p[1], jour: +p[2],
+      semaine: new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay() };
+  }
+
+  function minutesDe(h) { return +String(h).slice(0, 2) * 60 + +String(h).slice(3, 5); }
+
+  /* La durée la plus longue réellement réservable sur ce créneau : la
+     distance jusqu'au prochain créneau DÉJÀ PRIS, confrontée aux formules
+     que Nils propose. C'est ce chiffre qui manquait pour savoir, d'un coup
+     d'œil, si quelqu'un peut encore poser deux heures ici. */
+  function dureeMax(journee, creneau) {
+    var debut = minutesDe(creneau.heure);
+    var plafond = 240;
+    journee.creneaux.forEach(function (c) {
+      if (!c.reserve) return;
+      var t = minutesDe(c.heure);
+      if (t > debut) plafond = Math.min(plafond, t - debut);
+    });
+    var tenables = (etat.formules || []).filter(function (f) {
+      return f.actif !== false && f.dureeMinutes <= plafond;
+    });
+    if (!tenables.length) return null;
+    var max = Math.max.apply(null, tenables.map(function (f) { return f.dureeMinutes; }));
+    return max % 60 === 0 ? (max / 60) + " h max" : max + " min max";
+  }
+
   function rendrePlanning() {
     vues.planning.textContent = "";
     vues.planningVide.hidden = etat.journees.length > 0;
 
-    etat.journees.forEach(function (j) {
-      var bloc = document.createElement("section");
-      bloc.className = "jour-admin" + (j.statut === "masquee" ? " est-masquee" : "");
-      bloc.setAttribute("data-teinte", j.lieu.teinte || "vert");
+    var parDate = {};
+    etat.journees.forEach(function (j) { (parDate[j.date] = parDate[j.date] || []).push(j); });
 
-      var libres = j.creneaux.filter(function (c) { return !c.reserve; }).length;
-      var pris = j.creneaux.length - libres;
+    /* L'horizon couvre deux semaines, et s'étend si des journées sont
+       ouvertes plus loin : on ne cache jamais une journée déjà créée. */
+    var dates = [];
+    for (var i = 0; i < HORIZON; i++) dates.push(dateIso(i));
+    Object.keys(parDate).forEach(function (d) { if (dates.indexOf(d) === -1) dates.push(d); });
+    dates.sort();
 
-      var entete = document.createElement("div");
-      entete.className = "jour-admin__entete";
-      entete.innerHTML =
-        '<span class="jour-admin__pastille" aria-hidden="true"></span>' +
-        '<span class="jour-admin__identite">' +
-          '<span class="jour-admin__date">' + echapper(j.dateTexte) + '</span>' +
-          '<span class="jour-admin__lieu">' + echapper(j.lieu.libelle) + ' · ' +
-            libres + ' libre' + (libres > 1 ? 's' : '') +
-            (pris ? ' · ' + pris + ' réservé' + (pris > 1 ? 's' : '') : '') + '</span>' +
-        '</span>';
+    var grille = document.createElement("div");
+    grille.className = "semainier";
+    var aujourdhui = dateIso(0);
 
-      var outils = document.createElement("div");
-      outils.className = "jour-admin__outils";
+    dates.forEach(function (date) {
+      var journees = parDate[date] || [];
+      var col = document.createElement("section");
+      col.className = "jourcol" + (journees.length ? "" : " est-vide") +
+        (date === aujourdhui ? " est-aujourdhui" : "");
 
-      var masquer = document.createElement("button");
-      masquer.type = "button";
-      masquer.className = "outil";
-      masquer.textContent = j.statut === "masquee" ? "Afficher" : "Masquer";
-      masquer.addEventListener("click", function () { basculerJournee(j); });
+      var m = morceaux(date);
+      var tete = document.createElement("div");
+      tete.className = "jourcol__tete";
+      tete.innerHTML =
+        '<span class="jourcol__nom">' + JOURS_SEM[m.semaine] +
+          (date === aujourdhui ? " · aujourd\u2019hui" : "") + '</span>' +
+        '<span class="jourcol__date">' + m.jour + ' <span style="font-size:.6em;font-weight:600">' +
+          MOIS_COURTS[m.mois - 1] + '</span></span>';
+      col.appendChild(tete);
 
-      var supprimer = document.createElement("button");
-      supprimer.type = "button";
-      supprimer.className = "outil outil--danger";
-      supprimer.textContent = "Supprimer";
-      supprimer.addEventListener("click", function () { supprimerJournee(j); });
-
-      outils.appendChild(masquer);
-      outils.appendChild(supprimer);
-      entete.appendChild(outils);
-      bloc.appendChild(entete);
-
-      j.creneaux.forEach(function (c) { bloc.appendChild(ligneCreneau(j, c)); });
-
-      /* Ajout d'horaires à une journée déjà ouverte. */
-      var ajout = document.createElement("form");
-      ajout.className = "ajout-creneaux";
-      ajout.innerHTML =
-        '<div class="ajout-creneaux__ligne">' +
-          '<input type="text" data-horaires placeholder="10h30  14h  16h" ' +
-            'aria-label="Horaires à ajouter" autocomplete="off">' +
-          '<button class="outil" type="submit">Ajouter</button>' +
-        '</div>' +
-        '<div class="ajout-creneaux__plage">' +
-          '<span class="tech">Plage</span>' +
-          '<input type="time" data-plage-debut value="10:00" aria-label="Début de la plage">' +
-          '<span class="tech">à</span>' +
-          '<input type="time" data-plage-fin value="15:00" aria-label="Fin de la plage">' +
-          '<select data-plage-pas aria-label="Intervalle">' +
-            '<option value="30">30 min</option>' +
-            '<option value="45">45 min</option>' +
-            '<option value="60" selected>1 h</option>' +
-            '<option value="90">1 h 30</option>' +
-            '<option value="120">2 h</option>' +
-          '</select>' +
-          '<button class="outil" type="button" data-plage-remplir>Remplir</button>' +
-        '</div>';
-
-      ajout.querySelector("[data-plage-remplir]").addEventListener("click", function () {
-        var sortie = serie(ajout.querySelector("[data-plage-debut]").value,
-                           ajout.querySelector("[data-plage-fin]").value,
-                           Number(ajout.querySelector("[data-plage-pas]").value));
-        if (!sortie) return;
-        ajout.querySelector("[data-horaires]").value = sortie.join("  ");
-      });
-      ajout.addEventListener("submit", function (e) {
-        e.preventDefault();
-        var champ = ajout.querySelector("[data-horaires]");
-        var lecture = lireHoraires(champ.value);
-        if (lecture.mauvaises.length) {
-          dire("Horaire non compris : " + lecture.mauvaises.join(", ") + ".", true);
-          return;
-        }
-        if (!lecture.bonnes.length) { dire("Aucun horaire saisi.", true); return; }
-        appeler("/api/admin/creneaux", {
-          method: "POST",
-          body: JSON.stringify({ journeeId: j.id, heures: lecture.bonnes })
-        }).then(function (r) {
-          if (gererSession(r)) return;
-          if (!r.ok) { dire((r.corps && r.corps.message) || "Ajout refusé.", true); return; }
-          champ.value = "";
-          dire(lecture.bonnes.length + " horaire" + (lecture.bonnes.length > 1 ? "s ajoutés" : " ajouté") + ".");
-          chargerPlanning();
+      if (!journees.length) {
+        var repos = document.createElement("div");
+        repos.className = "jourcol__repos";
+        repos.innerHTML = 'Repos<br><button class="outil outil--doux" type="button" style="margin-top:9px">Ouvrir</button>';
+        repos.querySelector("button").addEventListener("click", function () {
+          $("#date").value = date;
+          $("#date").scrollIntoView({ behavior: "smooth", block: "center" });
+          $("#date").focus();
         });
-      });
-      bloc.appendChild(ajout);
+        col.appendChild(repos);
+        grille.appendChild(col);
+        return;
+      }
 
-      vues.planning.appendChild(bloc);
+      journees.forEach(function (j) {
+        var lieu = document.createElement("div");
+        lieu.className = "jourcol__tete";
+        lieu.style.borderTop = "1px solid var(--bord)";
+        lieu.style.paddingTop = "10px";
+        var libres = j.creneaux.filter(function (c) { return !c.reserve; }).length;
+        lieu.innerHTML = '<span class="jourcol__lieu"><span class="plage__pastille" data-teinte="' +
+          echapper(j.lieu.teinte || "vert") + '"></span>' + echapper(j.lieu.libelle) +
+          ' · ' + libres + (libres > 1 ? " libres" : " libre") + '</span>';
+
+        var outils = document.createElement("div");
+        outils.style.cssText = "display:flex;gap:6px;margin-top:9px";
+        var masquer = document.createElement("button");
+        masquer.type = "button"; masquer.className = "outil";
+        masquer.textContent = j.statut === "masquee" ? "Afficher" : "Masquer";
+        masquer.addEventListener("click", function () { basculerJournee(j); });
+        var supprimer = document.createElement("button");
+        supprimer.type = "button"; supprimer.className = "outil outil--danger";
+        supprimer.textContent = "Supprimer";
+        supprimer.addEventListener("click", function () { supprimerJournee(j); });
+        outils.appendChild(masquer); outils.appendChild(supprimer);
+        lieu.appendChild(outils);
+        col.appendChild(lieu);
+
+        var corps = document.createElement("div");
+        corps.className = "jourcol__corps";
+        j.creneaux.forEach(function (c) { corps.appendChild(carteCreneau(j, c)); });
+        col.appendChild(corps);
+
+        var ajout = document.createElement("form");
+        ajout.className = "jourcol__ajout";
+        ajout.innerHTML = '<input type="text" data-horaires placeholder="14h  15h30" ' +
+          'aria-label="Horaires à ajouter" autocomplete="off">' +
+          '<button class="outil" type="submit">Ajouter</button>';
+        ajout.addEventListener("submit", function (e) {
+          e.preventDefault();
+          var champ = ajout.querySelector("[data-horaires]");
+          var lecture = lireHoraires(champ.value);
+          if (lecture.mauvaises.length) { dire("Horaire non compris : " + lecture.mauvaises.join(", ") + ".", true); return; }
+          if (!lecture.bonnes.length) { dire("Aucun horaire saisi.", true); return; }
+          appeler("/api/admin/creneaux", { method: "POST",
+            body: JSON.stringify({ journeeId: j.id, heures: lecture.bonnes }) })
+            .then(function (r) {
+              if (gererSession(r)) return;
+              if (!r.ok) { dire(messageErreur(r, "Ajout refusé."), true); return; }
+              champ.value = "";
+              dire(lecture.bonnes.length + " horaire" + (lecture.bonnes.length > 1 ? "s ajoutés" : " ajouté") + ".");
+              chargerPlanning();
+            });
+        });
+        col.appendChild(ajout);
+      });
+
+      grille.appendChild(col);
     });
+
+    vues.planning.appendChild(grille);
   }
 
-  function ligneCreneau(journee, creneau) {
-    var ligne = document.createElement("div");
-    ligne.className = "ligne-creneau" +
-      (creneau.suite ? " est-suite" : (creneau.reserve ? " est-reserve" : ""));
+  function carteCreneau(journee, creneau) {
+    var carte = document.createElement("div");
+    carte.className = "creneau " + (creneau.suite ? "est-suite" : (creneau.reserve ? "est-reserve" : "est-libre"));
 
     var heure = document.createElement("span");
-    heure.className = "ligne-creneau__heure";
+    heure.className = "creneau__heure";
     heure.textContent = creneau.heure;
-    ligne.appendChild(heure);
+    carte.appendChild(heure);
 
-    var etatCase = document.createElement("div");
-    etatCase.className = "ligne-creneau__etat";
-
-    if (creneau.suite) {
-      etatCase.textContent = "Suite du cours précédent";
-    } else if (creneau.client) {
-      var c = creneau.client;
-      /* Une ligne d'information par ligne d'écran. Tout mettre sur une seule
-         ligne séparée par des points médians tient sur un ordinateur et se
-         casse n'importe comment sur un téléphone. */
-      etatCase.innerHTML =
-        '<div class="ligne-creneau__client">' + echapper(c.nom) + '</div>' +
-        '<div class="ligne-creneau__detail">' +
-          '<a href="tel:' + echapper(c.telephone.replace(/[^0-9+]/g, "")) + '">' + echapper(c.telephone) + '</a>' +
-        '</div>' +
-        '<div class="ligne-creneau__detail">' +
-          echapper(c.formule) + ', ' + echapper(c.dureeTexte) + ' · ' + echapper(c.prixTexte) +
-        '</div>' +
-        (c.message ? '<div class="ligne-creneau__detail">« ' + echapper(c.message) + ' »</div>' : '');
-    } else {
-      /* « Libre » plutôt que « Disponible » : le mot doit tenir sur la ligne
-         à côté des deux boutons, sur un écran de 360 px. */
-      etatCase.innerHTML = '<span class="ligne-creneau__libre">Libre</span>';
-    }
-    ligne.appendChild(etatCase);
-
-    var outils = document.createElement("div");
-    outils.className = "ligne-creneau__outils";
-
-    if (!creneau.reserve) {
-      var modifier = document.createElement("button");
-      modifier.type = "button";
-      modifier.className = "outil";
-      modifier.textContent = "Heure";
-      modifier.addEventListener("click", function () { modifierHeure(creneau); });
-      outils.appendChild(modifier);
-    }
+    var etatTexte = document.createElement("span");
+    etatTexte.className = "creneau__etat";
+    if (creneau.suite) etatTexte.textContent = "suite du cours";
+    else if (creneau.reserve) etatTexte.textContent = creneau.client ? creneau.client.nom : "réservé";
+    else etatTexte.textContent = dureeMax(journee, creneau) || "aucune formule ne tient";
+    carte.appendChild(etatTexte);
 
     if (!creneau.suite) {
       var retirer = document.createElement("button");
       retirer.type = "button";
-      retirer.className = "outil outil--danger";
-      retirer.textContent = "Retirer";
+      retirer.className = "creneau__retirer";
+      retirer.setAttribute("aria-label", "Retirer le créneau de " + creneau.heure);
+      retirer.innerHTML = "&times;";
       retirer.addEventListener("click", function () { supprimerCreneau(journee, creneau); });
-      outils.appendChild(retirer);
+      carte.appendChild(retirer);
     }
 
-    ligne.appendChild(outils);
-    return ligne;
+    if (!creneau.reserve) return carte;
+
+    /* Un créneau réservé porte quelqu'un : son nom, son téléphone et sa
+       formule doivent se lire sans cliquer. */
+    var bloc = document.createElement("div");
+    bloc.appendChild(carte);
+    if (creneau.client) {
+      var c = creneau.client;
+      var fiche = document.createElement("div");
+      fiche.className = "client";
+      fiche.innerHTML =
+        '<div class="client__ligne"><a href="tel:' + echapper(c.telephone.replace(/[^0-9+]/g, "")) + '">' +
+          echapper(c.telephone) + '</a></div>' +
+        '<div class="client__ligne">' + echapper(c.formule) + ', ' + echapper(c.dureeTexte) +
+          ' · ' + echapper(c.prixTexte) + '</div>' +
+        (c.message ? '<div class="client__ligne">« ' + echapper(c.message) + ' »</div>' : '');
+      bloc.appendChild(fiche);
+    }
+    return bloc;
   }
 
   /* ---------------------------------------------------------------- Actions */
@@ -510,6 +557,12 @@
         if (gererSession(rf) || gererSession(rl)) return;
         if (rf.ok) { etat.formules = rf.corps.formules || []; rendreFormules(); }
         if (rl.ok) { etat.tousLieux = rl.corps.lieux || []; rendreLieux(); remplirLieux(); }
+        /* Le planning affiche la durée réservable de chaque créneau, qui se
+           calcule à partir des formules. Les deux chargements partent en
+           parallèle : si les formules arrivent après, il faut redessiner,
+           sinon chaque créneau libre annonce « aucune formule ne tient ». */
+        if (rf.ok && etat.journees.length) rendrePlanning();
+        if (rl.ok && etat.plages.length) rendrePlages();
       })
       .catch(function () { dire("Les réglages n'ont pas pu être chargés.", true); });
   }
@@ -725,6 +778,126 @@
     if (r.corps && r.corps.champs) return "Champ incorrect : " + r.corps.champs.join(", ") + ".";
     return defaut;
   }
+
+  /* ==========================================================================
+     La semaine type.
+
+     Ce n'est pas une règle de disponibilité permanente, et la nuance est
+     volontaire : c'est un gabarit qu'on applique pour fabriquer de vraies
+     journées. Nils peut ensuite annuler un jeudi, décaler une heure, sans
+     toucher au gabarit — et le planning reste une suite de journées
+     concrètes, pas une abstraction à interpréter.
+     ========================================================================== */
+
+  var NOMS_JOURS = ["", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+
+  function chargerSemaine() {
+    appeler("/api/admin/semaine").then(function (r) {
+      if (gererSession(r)) return;
+      if (!r.ok) { dire(messageErreur(r, "Semaine type illisible."), true); return; }
+      etat.plages = r.corps.plages || [];
+      remplirPlageLieux(r.corps.lieux || []);
+      rendrePlages();
+    }).catch(function () { dire("La connexion a échoué.", true); });
+  }
+
+  function remplirPlageLieux(lieux) {
+    if (!vues.plageLieux) return;
+    var choix = vues.plageLieux.value;
+    vues.plageLieux.textContent = "";
+    lieux.forEach(function (l) {
+      var o = document.createElement("option");
+      o.value = l.code;
+      o.textContent = (l.libelle || "").toLowerCase().indexOf((l.ville || "").toLowerCase()) === -1
+        ? l.libelle + ", " + l.ville : l.libelle;
+      vues.plageLieux.appendChild(o);
+    });
+    if (choix) vues.plageLieux.value = choix;
+  }
+
+  function rendrePlages() {
+    vues.plages.textContent = "";
+    var actives = etat.plages.filter(function (p) { return p.actif; });
+    var total = actives.reduce(function (n, p) { return n + p.creneaux; }, 0);
+    vues.semaineCompte.textContent = actives.length
+      ? actives.length + (actives.length > 1 ? " plages" : " plage") + " · " + total + " créneaux par semaine"
+      : "aucune plage";
+
+    if (!etat.plages.length) {
+      vues.plages.innerHTML = '<p class="semaine__note" style="margin:0">' +
+        'Aucune plage pour l\u2019instant. Ajoutez vos fenêtres de disponibilité ci-dessous.</p>';
+      return;
+    }
+
+    etat.plages.forEach(function (p) {
+      var ligne = document.createElement("div");
+      ligne.className = "plage" + (p.actif ? "" : " est-inactive");
+      var teinte = (etat.tousLieux.find(function (l) { return l.code === p.lieu; }) || {}).teinte || "vert";
+      ligne.innerHTML =
+        '<span class="plage__jour">' + echapper(p.jourNom) + '</span>' +
+        '<span class="plage__heures">' + echapper(p.debut) + ' → ' + echapper(p.fin) + '</span>' +
+        '<span class="plage__lieu"><span class="plage__pastille" data-teinte="' + echapper(teinte) +
+          '"></span>' + echapper(p.lieuNom) + '</span>' +
+        '<span class="plage__compte">' + p.creneaux + ' × ' +
+          (p.pas % 60 === 0 ? (p.pas / 60) + " h" : p.pas + " min") + '</span>';
+
+      var outils = document.createElement("div");
+      outils.className = "plage__outils";
+      var retirer = document.createElement("button");
+      retirer.type = "button"; retirer.className = "outil outil--danger"; retirer.textContent = "Retirer";
+      retirer.addEventListener("click", function () {
+        if (!window.confirm("Retirer la plage du " + p.jourNom + " " + p.debut + " → " + p.fin + " ?\n\nLes journées déjà fabriquées ne bougent pas.")) return;
+        appeler("/api/admin/semaine?id=" + encodeURIComponent(p.id), { method: "DELETE" })
+          .then(function (r) {
+            if (gererSession(r)) return;
+            if (!r.ok) { dire(messageErreur(r, "Suppression refusée."), true); return; }
+            dire("Plage retirée de la semaine type.");
+            chargerSemaine();
+          });
+      });
+      outils.appendChild(retirer);
+      ligne.appendChild(outils);
+      vues.plages.appendChild(ligne);
+    });
+  }
+
+  vues.plageNouvelle.addEventListener("submit", function (e) {
+    e.preventDefault();
+    appeler("/api/admin/semaine", {
+      method: "POST",
+      body: JSON.stringify({
+        jour: Number($("#p-jour").value),
+        lieu: $("#p-lieu").value,
+        debut: $("#p-debut").value,
+        fin: $("#p-fin").value,
+        pas: Number($("#p-pas").value)
+      })
+    }).then(function (r) {
+      if (gererSession(r)) return;
+      if (!r.ok) { dire(messageErreur(r, "Plage non ajoutée."), true); return; }
+      dire("Plage du " + r.corps.plage.jourNom + " ajoutée : " + r.corps.plage.creneaux + " créneaux.");
+      chargerSemaine();
+    });
+  });
+
+  $("[data-appliquer]").addEventListener("click", function () {
+    var semaines = Number($("#p-semaines").value) || 4;
+    var bouton = $("[data-appliquer]");
+    bouton.disabled = true; bouton.textContent = "Fabrication…";
+    appeler("/api/admin/semaine?appliquer=" + semaines, { method: "POST" })
+      .then(function (r) {
+        bouton.disabled = false; bouton.textContent = "Fabriquer les journées";
+        if (gererSession(r)) return;
+        if (!r.ok) { dire(messageErreur(r, "Application refusée."), true); return; }
+        dire(r.corps.journeesCreees + " journée" + (r.corps.journeesCreees > 1 ? "s créées" : " créée") +
+             " sur " + r.corps.semaines + " semaines. Les horaires déjà présents n\u2019ont pas bougé.");
+        chargerPlanning();
+      })
+      .catch(function () {
+        bouton.disabled = false; bouton.textContent = "Fabriquer les journées";
+        dire("La connexion a échoué.", true);
+      });
+  });
 
   /* ----------------------------------------------------------------- Départ */
   var demain = new Date();
