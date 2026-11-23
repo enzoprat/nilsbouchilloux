@@ -38,11 +38,18 @@ module.exports = async function (requete, reponse) {
     const parLieu = {};
     lieux.forEach(function (l) { parLieu[l.code] = l; });
 
+    /* Un lieu retiré emporte ses journées. Sans ce filtre, désactiver un
+       lieu le sortait des listes mais laissait ses créneaux réservables :
+       le visiteur voyait une journée dont le site ne savait plus dire où
+       elle se tenait. La vue SQL porte la même règle, celle-ci agit tout
+       de suite, sans attendre que le schéma soit rejoué. */
+    const creneauxActifs = creneaux.filter(function (c) { return parLieu[c.lieu]; });
+
     /* Regroupement par journée, en conservant les créneaux pris : ils ne
        sont pas proposés, mais ils plafonnent la durée des précédents. */
     const journees = [];
     const index = {};
-    creneaux.forEach(function (c) {
+    creneauxActifs.forEach(function (c) {
       let j = index[c.journee_id];
       if (!j) {
         j = index[c.journee_id] = {
@@ -50,7 +57,7 @@ module.exports = async function (requete, reponse) {
           date: c.date,
           dateTexte: L.dateEnFrancais(c.date),
           dateLongue: L.dateComplete(c.date),
-          lieu: parLieu[c.lieu] || { code: c.lieu, libelle: c.lieu, ville: "", teinte: "vert" },
+          lieu: parLieu[c.lieu],
           tous: []
         };
         journees.push(j);

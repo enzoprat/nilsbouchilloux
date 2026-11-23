@@ -125,7 +125,12 @@ create index if not exists journees_date_idx    on public.journees (date);
 
 -- --------------------------------------------------------------------------
 -- Ce que le public a le droit de voir : les journées ouvertes et à venir,
--- avec l'état de chaque créneau. Aucune donnée personnelle n'y figure.
+-- dans un lieu encore actif, avec l'état de chaque créneau. Aucune donnée
+-- personnelle n'y figure.
+--
+-- La jointure sur lieux.actif n'est pas décorative : retirer un lieu doit
+-- emporter ses journées. Sans elle, le lieu quittait les listes mais ses
+-- créneaux restaient réservables.
 --
 -- Le « à venir » se juge à l'heure de Paris, sinon un créneau de 9 h reste
 -- proposé à 14 h.
@@ -140,6 +145,7 @@ select
   (c.reservation_id is not null)   as pris
 from public.journees j
 join public.creneaux c on c.journee_id = j.id
+join public.lieux   l on l.code = j.lieu and l.actif
 where j.statut = 'ouverte'
   and (j.date + c.heure) > (now() at time zone 'Europe/Paris');
 

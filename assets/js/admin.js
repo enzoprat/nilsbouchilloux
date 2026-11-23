@@ -25,10 +25,16 @@
     lieux: $("[data-lieux]"),
     nouvelle: $("[data-nouvelle]"),
     planning: $("[data-planning]"),
-    planningVide: $("[data-planning-vide]")
+    planningVide: $("[data-planning-vide]"),
+    listeFormules: $("[data-liste-formules]"),
+    compteFormules: $("[data-compte-formules]"),
+    formuleNouvelle: $("[data-formule-nouvelle]"),
+    listeLieux: $("[data-liste-lieux]"),
+    compteLieux: $("[data-compte-lieux]"),
+    lieuNouveau: $("[data-lieu-nouveau]")
   };
 
-  var etat = { lieux: [], journees: [] };
+  var etat = { lieux: [], journees: [], formules: [], tousLieux: [] };
 
   /* ------------------------------------------------------------------ Réseau */
   function appeler(url, options) {
@@ -77,6 +83,7 @@
     vues.connexion.hidden = true;
     vues.espace.hidden = false;
     chargerPlanning();
+    chargerReglages();
   }
 
   vues.connexionFormulaire.addEventListener("submit", function (e) {
@@ -136,24 +143,27 @@
     return { bonnes: bonnes, mauvaises: mauvaises };
   }
 
-  /* Générateur de série : remplir « 9 h à 17 h toutes les heures » sans
-     taper neuf horaires à la main. */
-  $("[data-serie]").addEventListener("click", function () {
-    var debut = normaliserHeure($("#serie-debut").value);
-    var fin = normaliserHeure($("#serie-fin").value);
-    var pas = Number($("#serie-pas").value) || 60;
-    if (!debut || !fin) { dire("Indiquez un début et une fin.", true); return; }
-
+  /* Une plage de disponibilité en liste d'horaires : « de 10 h à 15 h toutes
+     les heures » donne 10:00, 11:00 … 15:00. Retourne null et prévient si la
+     saisie n'a pas de sens, plutôt que de produire une liste absurde. */
+  function serie(debutBrut, finBrut, pas) {
+    var debut = normaliserHeure(debutBrut), fin = normaliserHeure(finBrut);
+    if (!debut || !fin) { dire("Indiquez un début et une fin.", true); return null; }
     var m = function (h) { var p = h.split(":"); return +p[0] * 60 + +p[1]; };
     var debutM = m(debut), finM = m(fin);
-    if (finM <= debutM) { dire("La fin doit venir après le début.", true); return; }
-    if ((finM - debutM) / pas > 40) { dire("Cela ferait trop de créneaux.", true); return; }
-
+    if (finM <= debutM) { dire("La fin doit venir après le début.", true); return null; }
+    if (!pas || pas < 5) pas = 60;
+    if ((finM - debutM) / pas > 40) { dire("Cela ferait plus de quarante créneaux.", true); return null; }
     var sortie = [];
     for (var t = debutM; t <= finM; t += pas) {
       sortie.push(String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"));
     }
-    $("#horaires").value = sortie.join("  ");
+    return sortie;
+  }
+
+  $("[data-serie]").addEventListener("click", function () {
+    var sortie = serie($("#serie-debut").value, $("#serie-fin").value, Number($("#serie-pas").value));
+    if (sortie) $("#horaires").value = sortie.join("  ");
   });
 
   /* ---------------------------------------------------- Ouvrir une journée */
@@ -207,15 +217,22 @@
   }
 
   function remplirLieux() {
-    if (vues.lieux.options.length === etat.lieux.length && vues.lieux.options.length) return;
+    /* La source est la liste des réglages quand elle est chargée, sinon
+       celle du planning : ainsi un lieu ajouté est immédiatement
+       sélectionnable sans recharger la page. */
+    var source = etat.tousLieux.length
+      ? etat.tousLieux.filter(function (l) { return l.actif; })
+      : etat.lieux;
+    var choix = vues.lieux.value;
     vues.lieux.textContent = "";
-    etat.lieux.forEach(function (l) {
+    source.forEach(function (l) {
       var option = document.createElement("option");
       option.value = l.code;
       option.textContent = (l.libelle || "").toLowerCase().indexOf((l.ville || "").toLowerCase()) === -1
         ? l.libelle + ", " + l.ville : l.libelle;
       vues.lieux.appendChild(option);
     });
+    if (choix) vues.lieux.value = choix;
   }
 
   function rendrePlanning() {
@@ -266,12 +283,37 @@
       /* Ajout d'horaires à une journée déjà ouverte. */
       var ajout = document.createElement("form");
       ajout.className = "ajout-creneaux";
-      ajout.innerHTML = '<input type="text" placeholder="10h30  14h  16h" ' +
-        'aria-label="Horaires à ajouter" autocomplete="off">' +
-        '<button class="outil" type="submit">Ajouter</button>';
+      ajout.innerHTML =
+        '<div class="ajout-creneaux__ligne">' +
+          '<input type="text" data-horaires placeholder="10h30  14h  16h" ' +
+            'aria-label="Horaires à ajouter" autocomplete="off">' +
+          '<button class="outil" type="submit">Ajouter</button>' +
+        '</div>' +
+        '<div class="ajout-creneaux__plage">' +
+          '<span class="tech">Plage</span>' +
+          '<input type="time" data-plage-debut value="10:00" aria-label="Début de la plage">' +
+          '<span class="tech">à</span>' +
+          '<input type="time" data-plage-fin value="15:00" aria-label="Fin de la plage">' +
+          '<select data-plage-pas aria-label="Intervalle">' +
+            '<option value="30">30 min</option>' +
+            '<option value="45">45 min</option>' +
+            '<option value="60" selected>1 h</option>' +
+            '<option value="90">1 h 30</option>' +
+            '<option value="120">2 h</option>' +
+          '</select>' +
+          '<button class="outil" type="button" data-plage-remplir>Remplir</button>' +
+        '</div>';
+
+      ajout.querySelector("[data-plage-remplir]").addEventListener("click", function () {
+        var sortie = serie(ajout.querySelector("[data-plage-debut]").value,
+                           ajout.querySelector("[data-plage-fin]").value,
+                           Number(ajout.querySelector("[data-plage-pas]").value));
+        if (!sortie) return;
+        ajout.querySelector("[data-horaires]").value = sortie.join("  ");
+      });
       ajout.addEventListener("submit", function (e) {
         e.preventDefault();
-        var champ = ajout.querySelector("input");
+        var champ = ajout.querySelector("[data-horaires]");
         var lecture = lireHoraires(champ.value);
         if (lecture.mauvaises.length) {
           dire("Horaire non compris : " + lecture.mauvaises.join(", ") + ".", true);
@@ -446,6 +488,242 @@
         dire("Journée supprimée.");
         chargerPlanning();
       });
+  }
+
+  /* ==========================================================================
+     Les réglages : prestations et lieux.
+
+     Ces deux tables étaient jusqu'ici figées dans le schéma SQL, modifiables
+     seulement en rejouant un fichier dans Supabase. Elles se pilotent
+     maintenant d'ici. La page publique les relit à chaque chargement : un
+     prix changé est en ligne à la seconde suivante, sans redéploiement.
+
+     Une ligne retirée n'est pas effacée. Les réservations et les journées
+     passées la référencent ; on la désactive, elle quitte le site et garde
+     son histoire.
+     ========================================================================== */
+
+  function chargerReglages() {
+    Promise.all([appeler("/api/admin/formules"), appeler("/api/admin/lieux")])
+      .then(function (reponses) {
+        var rf = reponses[0], rl = reponses[1];
+        if (gererSession(rf) || gererSession(rl)) return;
+        if (rf.ok) { etat.formules = rf.corps.formules || []; rendreFormules(); }
+        if (rl.ok) { etat.tousLieux = rl.corps.lieux || []; rendreLieux(); remplirLieux(); }
+      })
+      .catch(function () { dire("Les réglages n'ont pas pu être chargés.", true); });
+  }
+
+  /* Une ligne de réglage : l'état lisible, et un formulaire d'édition replié
+     dessous. On ne passe pas par window.prompt : cinq champs ne se saisissent
+     pas dans une boîte de dialogue, encore moins sur un téléphone. */
+  function ligneReglage(options) {
+    var ligne = document.createElement("div");
+    ligne.className = "reglage" + (options.actif ? "" : " est-retire");
+
+    var resume = document.createElement("div");
+    resume.className = "reglage__resume";
+    resume.innerHTML =
+      '<div class="reglage__nom">' + echapper(options.nom) +
+        (options.actif ? "" : ' <span class="reglage__retire">retiré</span>') + '</div>' +
+      '<div class="reglage__detail">' + options.detail + '</div>';
+    ligne.appendChild(resume);
+
+    var outils = document.createElement("div");
+    outils.className = "reglage__outils";
+
+    var editer = document.createElement("button");
+    editer.type = "button"; editer.className = "outil"; editer.textContent = "Modifier";
+    outils.appendChild(editer);
+
+    var bascule = document.createElement("button");
+    bascule.type = "button"; bascule.className = "outil";
+    bascule.textContent = options.actif ? "Retirer" : "Remettre";
+    if (options.actif) bascule.className += " outil--danger";
+    bascule.addEventListener("click", options.surBascule);
+    outils.appendChild(bascule);
+
+    resume.appendChild(outils);
+
+    var edition = document.createElement("form");
+    edition.className = "reglage__edition";
+    edition.hidden = true;
+    edition.innerHTML = options.champs +
+      '<p class="reglage__actions">' +
+      '<button class="outil" type="submit">Enregistrer</button>' +
+      '<button class="outil" type="button" data-annuler>Annuler</button></p>';
+    edition.addEventListener("submit", function (e) { e.preventDefault(); options.surEnregistrer(edition); });
+    edition.querySelector("[data-annuler]").addEventListener("click", function () { edition.hidden = true; });
+    ligne.appendChild(edition);
+
+    editer.addEventListener("click", function () {
+      edition.hidden = !edition.hidden;
+      if (!edition.hidden) { var p = edition.querySelector("input"); if (p) p.focus(); }
+    });
+    return ligne;
+  }
+
+  function champ(etiquette, nom, valeur, attributs) {
+    return '<label class="reglage__champ"><span>' + echapper(etiquette) + '</span>' +
+      '<input data-champ="' + nom + '" value="' + echapper(valeur) + '" ' +
+      (attributs || "") + ' autocomplete="off"></label>';
+  }
+
+  function lire(edition, nom) {
+    var e = edition.querySelector('[data-champ="' + nom + '"]');
+    return e ? e.value : undefined;
+  }
+
+  /* ------------------------------------------------------------ Prestations */
+  function rendreFormules() {
+    vues.listeFormules.textContent = "";
+    var actives = etat.formules.filter(function (f) { return f.actif; }).length;
+    vues.compteFormules.textContent = actives + (actives > 1 ? " actives" : " active");
+
+    etat.formules.forEach(function (f) {
+      vues.listeFormules.appendChild(ligneReglage({
+        nom: f.libelle,
+        actif: f.actif,
+        detail: echapper(f.dureeTexte) + " · " +
+                (f.personnes > 1 ? f.personnes + " personnes" : "1 personne") +
+                ' · <strong>' + echapper(f.prixTexte) + "</strong>",
+        champs:
+          champ("Nom", "libelle", f.libelle, 'type="text"') +
+          champ("Personnes", "personnes", f.personnes, 'type="number" min="1" max="12" inputmode="numeric"') +
+          champ("Durée", "duree", f.dureeMinutes >= 60 && f.dureeMinutes % 60 === 0
+            ? (f.dureeMinutes / 60) + "h" : f.dureeMinutes, 'type="text"') +
+          champ("Prix", "prix", f.prixSaisie, 'type="text" inputmode="decimal"'),
+        surBascule: function () { basculerFormule(f); },
+        surEnregistrer: function (edition) {
+          appeler("/api/admin/formules", {
+            method: "PATCH",
+            body: JSON.stringify({
+              code: f.code,
+              libelle: lire(edition, "libelle"),
+              personnes: Number(lire(edition, "personnes")),
+              duree: lire(edition, "duree"),
+              prix: lire(edition, "prix")
+            })
+          }).then(function (r) {
+            if (gererSession(r)) return;
+            if (!r.ok) { dire(messageErreur(r, "Prestation non modifiée."), true); return; }
+            dire("« " + r.corps.formule.libelle + " » enregistrée à " + r.corps.formule.prixTexte + ".");
+            chargerReglages();
+          });
+        }
+      }));
+    });
+  }
+
+  function basculerFormule(f) {
+    if (f.actif && !window.confirm("Retirer « " + f.libelle + " » du site ?\n\nElle disparaît des formules proposées. Les réservations déjà prises ne bougent pas.")) return;
+    var action = f.actif
+      ? appeler("/api/admin/formules?code=" + encodeURIComponent(f.code), { method: "DELETE" })
+      : appeler("/api/admin/formules", { method: "PATCH", body: JSON.stringify({ code: f.code, actif: true }) });
+    action.then(function (r) {
+      if (gererSession(r)) return;
+      if (!r.ok) { dire(messageErreur(r, "Changement refusé."), true); return; }
+      dire(f.actif ? "Prestation retirée du site." : "Prestation remise en ligne.");
+      chargerReglages();
+    });
+  }
+
+  vues.formuleNouvelle.addEventListener("submit", function (e) {
+    e.preventDefault();
+    appeler("/api/admin/formules", {
+      method: "POST",
+      body: JSON.stringify({
+        libelle: $("#f-libelle").value,
+        personnes: Number($("#f-personnes").value),
+        duree: $("#f-duree").value,
+        prix: $("#f-prix").value
+      })
+    }).then(function (r) {
+      if (gererSession(r)) return;
+      if (!r.ok) { dire(messageErreur(r, "Prestation non créée."), true); return; }
+      $("#f-libelle").value = ""; $("#f-duree").value = ""; $("#f-prix").value = "";
+      dire("« " + r.corps.formule.libelle + " » ajoutée à " + r.corps.formule.prixTexte + ".");
+      chargerReglages();
+    });
+  });
+
+  /* ------------------------------------------------------------------ Lieux */
+  function rendreLieux() {
+    vues.listeLieux.textContent = "";
+    var actifs = etat.tousLieux.filter(function (l) { return l.actif; }).length;
+    vues.compteLieux.textContent = actifs + (actifs > 1 ? " actifs" : " actif");
+
+    etat.tousLieux.forEach(function (l) {
+      vues.listeLieux.appendChild(ligneReglage({
+        nom: l.libelle,
+        actif: l.actif,
+        detail: '<span class="reglage__teinte" data-teinte="' + echapper(l.teinte) + '"></span>' +
+                echapper(l.ville) +
+                (l.journees ? " · " + l.journees + (l.journees > 1 ? " journées" : " journée") : " · aucune journée"),
+        champs:
+          champ("Nom", "libelle", l.libelle, 'type="text"') +
+          champ("Ville", "ville", l.ville, 'type="text"') +
+          '<label class="reglage__champ"><span>Repère</span>' +
+          '<select data-champ="teinte">' +
+          '<option value="vert"' + (l.teinte === "vert" ? " selected" : "") + '>Vert</option>' +
+          '<option value="sable"' + (l.teinte === "sable" ? " selected" : "") + '>Sable</option>' +
+          '</select></label>',
+        surBascule: function () { basculerLieu(l); },
+        surEnregistrer: function (edition) {
+          appeler("/api/admin/lieux", {
+            method: "PATCH",
+            body: JSON.stringify({
+              code: l.code,
+              libelle: lire(edition, "libelle"),
+              ville: lire(edition, "ville"),
+              teinte: edition.querySelector('[data-champ="teinte"]').value
+            })
+          }).then(function (r) {
+            if (gererSession(r)) return;
+            if (!r.ok) { dire(messageErreur(r, "Lieu non modifié."), true); return; }
+            dire("« " + r.corps.lieu.libelle + " » enregistré.");
+            chargerReglages(); chargerPlanning();
+          });
+        }
+      }));
+    });
+  }
+
+  function basculerLieu(l) {
+    if (l.actif && !window.confirm("Retirer « " + l.libelle + " » ?\n\nIl disparaît du site et de la liste des journées. Les journées déjà tenues là-bas restent dans votre planning.")) return;
+    var action = l.actif
+      ? appeler("/api/admin/lieux?code=" + encodeURIComponent(l.code), { method: "DELETE" })
+      : appeler("/api/admin/lieux", { method: "PATCH", body: JSON.stringify({ code: l.code, actif: true }) });
+    action.then(function (r) {
+      if (gererSession(r)) return;
+      if (!r.ok) { dire(messageErreur(r, "Changement refusé."), true); return; }
+      dire(l.actif ? "Lieu retiré." : "Lieu remis en service.");
+      chargerReglages(); chargerPlanning();
+    });
+  }
+
+  vues.lieuNouveau.addEventListener("submit", function (e) {
+    e.preventDefault();
+    appeler("/api/admin/lieux", {
+      method: "POST",
+      body: JSON.stringify({
+        libelle: $("#l-libelle").value,
+        ville: $("#l-ville").value,
+        teinte: $("#l-teinte").value
+      })
+    }).then(function (r) {
+      if (gererSession(r)) return;
+      if (!r.ok) { dire(messageErreur(r, "Lieu non créé."), true); return; }
+      $("#l-libelle").value = ""; $("#l-ville").value = "";
+      dire("« " + r.corps.lieu.libelle + " » ajouté.");
+      chargerReglages(); chargerPlanning();
+    });
+  });
+
+  function messageErreur(r, defaut) {
+    if (r.corps && r.corps.message) return r.corps.message;
+    if (r.corps && r.corps.champs) return "Champ incorrect : " + r.corps.champs.join(", ") + ".";
+    return defaut;
   }
 
   /* ----------------------------------------------------------------- Départ */

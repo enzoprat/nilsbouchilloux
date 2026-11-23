@@ -348,7 +348,21 @@
   text-transform: uppercase; color: var(--encre-tenue);
 }
 
-.ajout-creneaux { display: flex; gap: 8px; padding: 12px 15px; background: var(--papier-creux); }
+/* L'ajout d'horaires sur une journée déjà ouverte : à la main sur la
+   première ligne, par plage sur la seconde. La plage sert le cas courant —
+   « finalement jeudi je suis libre de 10 h à 15 h » — sans obliger à taper
+   six horaires sur un clavier de téléphone. */
+.ajout-creneaux { display: grid; gap: 8px; padding: 12px 15px; background: var(--papier-creux); }
+.ajout-creneaux__ligne { display: flex; gap: 8px; }
+.ajout-creneaux__plage { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ajout-creneaux__plage .tech { flex: none; }
+.ajout-creneaux__plage input[type="time"] { flex: 0 1 108px; min-width: 92px; }
+.ajout-creneaux__plage select {
+  flex: 0 1 96px; font-family: var(--mono); font-size: 0.85rem; padding: 9px 8px;
+  border: 1px solid var(--trait-fort); background: var(--papier-clair);
+  color: var(--encre); border-radius: var(--r-net);
+}
+.ajout-creneaux__plage button { margin-left: auto; }
 .ajout-creneaux input {
   flex: 1; min-width: 0; font-family: var(--mono); font-size: 0.95rem;
   padding: 10px 11px; border: 1px solid var(--trait-fort); background: var(--papier-clair);
@@ -369,6 +383,89 @@
   font-family: var(--mono); font-size: var(--t-label); letter-spacing: var(--ls-label);
   text-transform: uppercase; color: var(--encre-douce);
 }
+
+/* --------------------------------------------------------------------------
+   9. Les réglages : prestations et lieux.
+
+   Repliés par défaut. Neuf fois sur dix Nils vient ouvrir une journée, pas
+   changer ses tarifs : ces deux panneaux ne doivent pas lui coûter deux
+   écrans de défilement à chaque visite. <details> est natif, donc il
+   fonctionne au clavier et sans JavaScript.
+   -------------------------------------------------------------------------- */
+.panneau { border: 1px solid var(--trait); background: var(--papier-clair); margin-top: var(--e4); }
+.panneau__titre {
+  display: flex; align-items: center; gap: var(--e3); cursor: pointer;
+  padding: 14px 15px; list-style: none;
+  font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre);
+}
+.panneau__titre::-webkit-details-marker { display: none; }
+/* Le chevron est dessiné plutôt qu'emprunté à une police d'icônes. */
+.panneau__titre::after {
+  content: ""; margin-left: auto; width: 7px; height: 7px; flex: none;
+  border-right: 1.5px solid var(--encre-tenue); border-bottom: 1.5px solid var(--encre-tenue);
+  transform: rotate(45deg) translate(-2px, -2px); transition: transform var(--transition);
+}
+.panneau[open] .panneau__titre::after { transform: rotate(225deg) translate(-2px, -2px); }
+.panneau__compte { color: var(--encre-tenue); letter-spacing: 0.1em; }
+.panneau__corps { padding: 0 15px 15px; border-top: 1px solid var(--trait); }
+.panneau__note { margin: var(--e3) 0 var(--e4); font-size: 0.9rem; color: var(--encre-douce); max-width: 56ch; }
+
+.reglage { border-bottom: 1px solid var(--trait); }
+.reglage:first-of-type { border-top: 1px solid var(--trait); }
+.reglage__resume { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 0; }
+.reglage__nom { flex: 1 1 140px; min-width: 0; font-weight: 560; }
+.reglage__detail {
+  flex: 1 1 160px; min-width: 0;
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--encre-douce);
+}
+.reglage__detail strong { color: var(--encre); }
+.reglage__outils { margin-left: auto; display: flex; gap: 6px; flex: none; }
+.reglage.est-retire { opacity: 0.55; }
+.reglage__retire {
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--rouge-texte);
+}
+/* La pastille rappelle la couleur qui distingue le lieu sur la page publique. */
+.reglage__teinte {
+  display: inline-block; width: 9px; height: 9px; margin-right: 7px;
+  background: var(--vert-vif); vertical-align: baseline;
+}
+.reglage__teinte[data-teinte="sable"] { background: var(--sable); }
+
+.reglage__edition { padding: 0 0 14px; display: grid; gap: 10px; }
+.reglage__champ { display: grid; gap: 5px; }
+.reglage__champ > span {
+  font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre-tenue);
+}
+.reglage__champ input, .reglage__champ select {
+  width: 100%; font-family: var(--ui); font-size: 1rem; padding: 10px 11px;
+  border: 1px solid var(--trait-fort); background: var(--papier-clair);
+  color: var(--encre); border-radius: var(--r-net);
+}
+.reglage__champ input:focus, .reglage__champ select:focus { outline: none; border-color: var(--rouge); }
+.reglage__actions { display: flex; gap: 8px; margin: 2px 0 0; }
+@media (min-width: 560px) {
+  .reglage__edition { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reglage__actions { grid-column: 1 / -1; }
+}
+
+.reglage-nouveau { margin-top: var(--e4); padding-top: var(--e4); border-top: 1px solid var(--trait); }
+.reglage-grille { display: grid; gap: var(--e3); margin-top: var(--e3); }
+@media (min-width: 560px) { .reglage-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.reglage-nouveau label {
+  display: block; margin-bottom: 5px;
+  font-family: var(--mono); font-size: var(--t-label);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--encre-douce);
+}
+.reglage-nouveau input, .reglage-nouveau select {
+  width: 100%; font-family: var(--ui); font-size: 1rem; padding: 11px;
+  border: 1px solid var(--trait-fort); background: var(--papier-clair);
+  color: var(--encre); border-radius: var(--r-net);
+}
+.reglage-nouveau input:focus, .reglage-nouveau select:focus { outline: none; border-color: var(--rouge); }
 
 .message-outil { padding: 12px 14px; border-left: 3px solid var(--vert-vif); background: var(--vert-voile); margin-bottom: var(--e4); }
 .message-outil--erreur { border-color: var(--rouge); background: var(--rouge-voile); }

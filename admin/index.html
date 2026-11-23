@@ -111,6 +111,91 @@
         <p>Ouvrez une journée ci-dessus : elle apparaîtra aussitôt sur la page de réservation.</p>
       </div>
 
+      <!-- ================================================================
+           Les réglages. Repliés par défaut : neuf fois sur dix, Nils vient
+           ouvrir une journée, pas changer ses tarifs.
+           ================================================================ -->
+      <details class="panneau" data-panneau-formules>
+        <summary class="panneau__titre">
+          <span>Mes prestations</span>
+          <span class="panneau__compte" data-compte-formules></span>
+        </summary>
+        <div class="panneau__corps">
+          <p class="panneau__note">
+            Ce que vous vendez, et à quel prix. Toute modification s'applique au
+            site dans la seconde. Les réservations déjà prises gardent le tarif
+            et la durée qu'elles avaient le jour où elles ont été faites.
+          </p>
+
+          <div data-liste-formules></div>
+
+          <form class="reglage-nouveau" data-formule-nouvelle novalidate>
+            <p class="tech">Ajouter une prestation</p>
+            <div class="reglage-grille">
+              <div>
+                <label for="f-libelle">Nom</label>
+                <input type="text" id="f-libelle" placeholder="Cours particulier" autocomplete="off" required>
+              </div>
+              <div>
+                <label for="f-personnes">Personnes</label>
+                <input type="number" id="f-personnes" value="1" min="1" max="12" inputmode="numeric">
+              </div>
+              <div>
+                <label for="f-duree">Durée</label>
+                <input type="text" id="f-duree" placeholder="1h" autocomplete="off">
+              </div>
+              <div>
+                <label for="f-prix">Prix</label>
+                <input type="text" id="f-prix" placeholder="80" inputmode="decimal" autocomplete="off">
+              </div>
+            </div>
+            <p style="margin-top:var(--e3)">
+              <button class="bouton bouton--contour bouton--large" type="submit">Ajouter cette prestation</button>
+            </p>
+          </form>
+        </div>
+      </details>
+
+      <details class="panneau" data-panneau-lieux>
+        <summary class="panneau__titre">
+          <span>Mes lieux</span>
+          <span class="panneau__compte" data-compte-lieux></span>
+        </summary>
+        <div class="panneau__corps">
+          <p class="panneau__note">
+            Les structures où vous vous déplacez. Un lieu retiré disparaît du site
+            et de la liste des journées, mais les journées déjà tenues là-bas
+            restent dans votre planning.
+          </p>
+
+          <div data-liste-lieux></div>
+
+          <form class="reglage-nouveau" data-lieu-nouveau novalidate>
+            <p class="tech">Ajouter un lieu</p>
+            <div class="reglage-grille">
+              <div>
+                <label for="l-libelle">Nom</label>
+                <input type="text" id="l-libelle" placeholder="Par 4 Golf" autocomplete="off" required>
+              </div>
+              <div>
+                <label for="l-ville">Ville</label>
+                <input type="text" id="l-ville" placeholder="Mérignac" autocomplete="off" required>
+              </div>
+              <div>
+                <label for="l-teinte">Repère</label>
+                <select id="l-teinte">
+                  <option value="vert">Vert</option>
+                  <option value="sable">Sable</option>
+                </select>
+              </div>
+            </div>
+            <p style="margin-top:var(--e3)">
+              <button class="bouton bouton--contour bouton--large" type="submit">Ajouter ce lieu</button>
+            </p>
+          </form>
+        </div>
+      </details>
+
       <p class="tech" style="margin-top:var(--e6)">
         Lien à partager : <a href="/reservation/" target="_blank" rel="noopener">nilsbouchilloux.fr/reservation</a>
       </p>

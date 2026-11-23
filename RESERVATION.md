@@ -101,25 +101,41 @@ s'ajoutent à celle qui existe.
 « Libre ». Une ligne réservée porte le nom du client, son téléphone
 cliquable, sa formule et son message.
 
+**Une plage sur une journée déjà ouverte.** Sous chaque journée, une ligne
+« Plage » : de telle heure à telle heure, tous les tant. C'est le geste du
+« finalement jeudi je suis libre de 10 h à 15 h » — il remplit le champ des
+horaires, qu'il reste à valider.
+
 **Masquer** retire une journée de la page publique sans la supprimer — utile
 quand la météo est douteuse. **Supprimer** l'efface. Si des clients y sont
 inscrits, le site refuse une première fois et affiche qui prévenir.
 
 ---
 
-## Les lieux et les tarifs
+## Les lieux et les tarifs : depuis l'admin, plus en SQL
 
-Ils vivent en base, pas dans le code. Ajouter un golf :
+Ils vivent en base et se pilotent depuis `/admin/`, dans deux panneaux
+repliés sous le planning. Plus besoin de toucher à Supabase pour changer un
+prix.
 
-```sql
-insert into public.lieux (code, libelle, ville, teinte, ordre)
-values ('teynac', 'Golf de Teynac', 'Beychac-et-Caillau', 'vert', 3);
-```
+**Mes prestations** — nom, nombre de personnes, durée, tarif. La durée
+s'écrit comme on la dit : `1h`, `1h30`, `90`. Le prix aussi : `80`, `47,50`.
+Toute modification est en ligne à la seconde suivante, sans redéploiement.
 
-`teinte` vaut `vert` ou `sable` : c'est la couleur du repère qui distingue
-les lieux dans la bande des journées. Changer un tarif se fait de même dans
-`public.formules` — le prix affiché au client et celui de l'e-mail viennent
-tous deux de là, jamais du JavaScript.
+**Mes lieux** — nom, ville, et le repère de couleur (`vert` ou `sable`) qui
+distingue les lieux dans la bande des journées de la page de réservation.
+
+Deux garde-fous, et ils comptent :
+
+- **Rien ne s'efface.** Retirer une prestation ou un lieu le désactive : il
+  quitte le site, les réservations et les journées passées le gardent. La
+  suppression franche n'est proposée que si personne n'y renvoie.
+- **Changer un prix ne réécrit pas le passé.** Chaque réservation a figé son
+  tarif et sa durée au moment où elle a été prise. Passer l'heure de 80 à
+  90 € ne transforme pas rétroactivement les réservations à 80 €.
+
+Le tarif affiché au client et celui des e-mails viennent tous deux de la
+base, jamais du JavaScript : un client ne peut pas forger un prix.
 
 ---
 

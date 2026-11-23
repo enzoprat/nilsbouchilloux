@@ -273,6 +273,35 @@ function lieuComplet(libelle, ville) {
   return nom.toLowerCase().indexOf(v.toLowerCase()) === -1 ? nom + ", " + v : nom;
 }
 
+/* Une durée telle que Nils la dit : « 1h », « 1h30 », « 90 », « 45 min ».
+   Retourne des minutes, ou null si la saisie n'est pas comprise. */
+function minutesDe(brut) {
+  const n = String(brut == null ? "" : brut).trim().toLowerCase().replace(/\s+/g, "").replace("min", "");
+  if (!n) return null;
+  let t;
+  if ((t = n.match(/^(\d{1,2})h(\d{1,2})$/))) return Number(t[1]) * 60 + Number(t[2]);
+  if ((t = n.match(/^(\d{1,2})h$/)))            return Number(t[1]) * 60;
+  if ((t = n.match(/^(\d{1,4})$/)))             return Number(t[1]);
+  return null;
+}
+
+/* Un prix tel qu'on l'écrit : « 80 », « 80 € », « 47,50 », « 47.50 ».
+   Retourne des centimes, parce qu'un prix ne se stocke jamais en flottant. */
+function centimesDe(brut) {
+  const n = String(brut == null ? "" : brut).trim().replace(/[€\s]/g, "").replace(",", ".");
+  if (!n || !/^\d+(\.\d{1,2})?$/.test(n)) return null;
+  return Math.round(Number(n) * 100);
+}
+
+/* Un code technique dérivé d'un libellé : « Cours à deux » -> « cours-a-deux ».
+   Nils ne le voit jamais, mais il sert de clé étrangère, donc il doit être
+   stable et sans accent. */
+function codeDepuis(texte, suffixe) {
+  const base = String(texte || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  return (base || "element") + (suffixe ? "-" + suffixe : "");
+}
+
 function prix(centimes) {
   return (centimes % 100 === 0)
     ? (centimes / 100) + " €"
@@ -325,5 +354,6 @@ module.exports = {
   creerJeton, jetonValide, lireCookies, poserCookie, effacerCookie,
   exigerAdmin, memeSecret,
   dateEnFrancais, dateComplete, heureEnFrancais, prix, aujourdhuiParis, normaliserHeure, lieuComplet,
+  minutesDe, centimesDe, codeDepuis,
   envoyerEmail, echapper
 };
