@@ -333,6 +333,7 @@
       if (!r.ok) { dire((r.corps && r.corps.message) || "Échec de l'enregistrement.", true); return; }
       $("#horaires").value = "";
       majApercu();
+      aller("planning");
       dire(horaires.bonnes.length
         ? "Journée ouverte, " + horaires.bonnes.length + " créneaux en ligne."
         : "Journée ouverte. Ajoutez-lui des horaires.");
@@ -465,8 +466,8 @@
         repos.className = "jourcol__repos";
         repos.innerHTML = 'Repos<br><button class="outil outil--doux" type="button" style="margin-top:9px">Ouvrir</button>';
         repos.querySelector("button").addEventListener("click", function () {
+          aller("nouvelle");
           $("#date").value = date;
-          $("#date").scrollIntoView({ behavior: "smooth", block: "center" });
           $("#date").focus();
         });
         col.appendChild(repos);
@@ -686,7 +687,10 @@
      ========================================================================== */
 
   function chargerReglages() {
-    Promise.all([appeler("/api/admin/formules"), appeler("/api/admin/lieux")])
+    /* Un seul chargement à la fois : le planning en redemande un quand les
+       formules lui manquent, sans savoir qu'il est déjà en route. */
+    if (etat.reglagesEnCours) return etat.reglagesEnCours;
+    etat.reglagesEnCours = Promise.all([appeler("/api/admin/formules"), appeler("/api/admin/lieux")])
       .then(function (reponses) {
         var rf = reponses[0], rl = reponses[1];
         if (gererSession(rf) || gererSession(rl)) return;
@@ -699,7 +703,15 @@
         if (rf.ok && etat.journees.length) rendrePlanning();
         if (rl.ok && etat.plages.length) rendrePlages();
       })
-      .catch(function () { dire("Les réglages n'ont pas pu être chargés.", true); });
+      .catch(function (e) {
+        /* Une panne de réseau et un bogue d'affichage ne se soignent pas
+           pareil : on garde la trace du second, qu'un message rassurant
+           faisait disparaître sans bruit. */
+        console.error("Réglages :", e);
+        dire("Les réglages n'ont pas pu être chargés.", true);
+      })
+      .then(function () { etat.reglagesEnCours = null; });
+    return etat.reglagesEnCours;
   }
 
   /* Une ligne de réglage : l'état lisible, et un formulaire d'édition replié
@@ -766,7 +778,9 @@
   function rendreFormules() {
     vues.listeFormules.textContent = "";
     var actives = etat.formules.filter(function (f) { return f.actif; }).length;
-    vues.compteFormules.textContent = actives + (actives > 1 ? " actives" : " active");
+    if (vues.compteFormules) {
+      vues.compteFormules.textContent = actives + (actives > 1 ? " actives" : " active");
+    }
 
     etat.formules.forEach(function (f) {
       vues.listeFormules.appendChild(ligneReglage({
@@ -839,7 +853,9 @@
   function rendreLieux() {
     vues.listeLieux.textContent = "";
     var actifs = etat.tousLieux.filter(function (l) { return l.actif; }).length;
-    vues.compteLieux.textContent = actifs + (actifs > 1 ? " actifs" : " actif");
+    if (vues.compteLieux) {
+      vues.compteLieux.textContent = actifs + (actifs > 1 ? " actifs" : " actif");
+    }
 
     etat.tousLieux.forEach(function (l) {
       vues.listeLieux.appendChild(ligneReglage({
@@ -1027,11 +1043,58 @@
         dire(r.corps.journeesCreees + " journée" + (r.corps.journeesCreees > 1 ? "s créées" : " créée") +
              " sur " + r.corps.semaines + " semaines. Les horaires déjà présents n\u2019ont pas bougé.");
         chargerPlanning();
+        aller("planning");
       })
       .catch(function () {
         bouton.disabled = false; bouton.textContent = "Fabriquer les journées";
         dire("La connexion a échoué.", true);
       });
+  });
+
+  /* ==========================================================================
+     La navigation.
+
+     Une seule section visible à la fois. Le choix se garde dans l'adresse :
+     recharger la page ne renvoie pas Nils au planning alors qu'il réglait
+     ses tarifs, et un lien peut pointer directement sur une section.
+     ========================================================================== */
+
+  var VUES = ["planning", "nouvelle", "semaine", "prestations", "lieux"];
+
+  /* Le titre de la barre dit toujours où l'on se trouve : sur un téléphone,
+     la navigation est en bas de l'écran et sort du champ de vision dès qu'on
+     fait défiler la page. */
+  var TITRES = {
+    planning: "Planning",
+    nouvelle: "Ouvrir un jour",
+    semaine: "Semaine type",
+    prestations: "Prestations",
+    lieux: "Lieux"
+  };
+
+  function aller(vue, sansHistorique) {
+    if (VUES.indexOf(vue) === -1) vue = "planning";
+    var titre = $("[data-titre-page]");
+    if (titre) titre.textContent = TITRES[vue];
+    document.querySelectorAll("[data-vue]").forEach(function (s) {
+      s.hidden = s.dataset.vue !== vue;
+    });
+    document.querySelectorAll("[data-aller]").forEach(function (b) {
+      var actif = b.dataset.aller === vue;
+      b.classList.toggle("est-actif", actif);
+      if (actif) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    });
+    if (!sansHistorique && window.location.hash !== "#" + vue) {
+      window.history.replaceState(null, "", "#" + vue);
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  document.querySelectorAll("[data-aller]").forEach(function (b) {
+    b.addEventListener("click", function () { aller(b.dataset.aller); });
+  });
+  window.addEventListener("hashchange", function () {
+    aller((window.location.hash || "").replace("#", ""), true);
   });
 
   /* ----------------------------------------------------------------- Départ */
@@ -1042,6 +1105,8 @@
   }).format(demain);
 
   majApercu();
+
+  aller((window.location.hash || "").replace("#", ""), true);
 
   appeler("/api/admin/session").then(function (r) {
     if (r.ok && r.corps && r.corps.connecte) montrerEspace();

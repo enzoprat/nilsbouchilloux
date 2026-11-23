@@ -133,9 +133,8 @@
    La semaine type
    -------------------------------------------------------------------------- */
 .admin .semaine { padding: 18px; }
-.admin .semaine__entete { display: flex; align-items: baseline; gap: var(--e3); flex-wrap: wrap; margin-bottom: var(--e3); }
-.admin .semaine__entete h2 { font-size: 1.05rem; font-weight: 640; letter-spacing: -0.02em; margin: 0; }
-.admin .semaine__note { font-size: 0.88rem; color: var(--encre-douce); margin: 0 0 var(--e4); max-width: 58ch; }
+.admin .liste-entete { display: flex; align-items: baseline; gap: var(--e3); flex-wrap: wrap; margin-bottom: var(--e3); }
+.admin .liste-entete h3 { font-size: 1.05rem; font-weight: 640; letter-spacing: -0.02em; margin: 0; }
 
 .admin .plages { display: grid; gap: 8px; margin-bottom: var(--e4); }
 .admin .plage {
@@ -322,3 +321,77 @@
 }
 .admin .lieu-express .reglage-grille { margin-top: 0; }
 .admin .lieu-express__actions { display: flex; gap: 8px; margin: var(--e3) 0 0; }
+
+/* ==========================================================================
+   La navigation
+
+   En bas sur téléphone, parce que c'est là que le pouce arrive et que Nils
+   consulte son planning d'une main. En haut sur grand écran, où la barre
+   basse flotterait sans raison.
+
+   Icône ET mot sur chaque entrée : l'icône seule se devine mal, le mot seul
+   se repère mal du coin de l'œil. Cibles de 56 px de haut, bien au-delà des
+   44 px minimum — on vise une main qui tient aussi un club de golf.
+   ========================================================================== */
+.navadmin {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
+  padding: 7px 7px calc(7px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: var(--flou); backdrop-filter: var(--flou);
+  border-top: 1px solid var(--bord);
+  box-shadow: 0 -8px 28px -20px rgba(12, 31, 22, 0.5);
+}
+.navadmin__onglet, .navadmin__plus {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  min-height: 56px; padding: 7px 3px; cursor: pointer;
+  border: 0; border-radius: 14px; background: transparent;
+  color: var(--encre-tenue); font-family: var(--ui); font-size: 0.66rem;
+  font-weight: 560; line-height: 1.15; text-align: center;
+  transition: background var(--transition), color var(--transition);
+}
+.navadmin svg {
+  width: 23px; height: 23px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.navadmin__onglet:hover { color: var(--encre); background: var(--surface-creuse); }
+.navadmin__onglet.est-actif { color: var(--vert); background: rgba(44, 127, 85, 0.12); }
+.navadmin__onglet.est-actif svg { stroke-width: 2; }
+
+/* Le bouton d'action principale se distingue des onglets : il n'affiche
+   pas une section de plus, il crée quelque chose. */
+.navadmin__plus { background: var(--vert); color: #fff; }
+.navadmin__plus:hover { background: var(--vert-surface); color: #fff; }
+.navadmin__plus.est-actif { background: var(--vert-nuit); color: #fff; }
+
+/* La barre basse masquerait le pied de la page : on lui rend sa place. */
+.admin { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+
+@media (min-width: 760px) {
+  .navadmin {
+    position: sticky; top: 14px; bottom: auto;
+    max-width: var(--largeur-etroite); margin: 0 auto var(--e5);
+    grid-template-columns: repeat(4, 1fr) auto;
+    border: 1px solid var(--bord); border-radius: var(--r-carte);
+    padding: 7px; box-shadow: var(--ombre);
+  }
+  .navadmin__onglet, .navadmin__plus { flex-direction: row; gap: 8px; min-height: 46px; font-size: 0.82rem; }
+  .navadmin__plus { padding-inline: 18px; }
+  .admin { padding-bottom: var(--e8); }
+}
+
+/* --------------------------------------------------------------------------
+   Les sections
+   -------------------------------------------------------------------------- */
+.vue-admin[hidden] { display: none !important; }
+.admin .vue-admin__titre {
+  font-family: var(--display); font-size: 1.5rem; font-weight: 700;
+  letter-spacing: -0.03em; margin: 0 0 6px;
+}
+.admin .vue-admin__chapeau {
+  margin: 0 0 var(--e4); color: var(--encre-douce);
+  font-size: 0.92rem; line-height: 1.55; max-width: 60ch;
+}
+/* La carte interne de la semaine type ne redouble pas le cadre de la vue. */
+.admin .vue-admin .semaine { padding: 0; background: none; border: 0; box-shadow: none; }
