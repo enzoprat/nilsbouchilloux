@@ -251,3 +251,74 @@
     -webkit-backdrop-filter: none; backdrop-filter: none; background: #FFFFFF;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Ouvrir une journée : l'aperçu et le repli
+   -------------------------------------------------------------------------- */
+.admin .nouvelle__intertitre {
+  margin: var(--e4) 0 var(--e3); font-family: var(--ui); font-size: 0.78rem;
+  font-weight: 560; color: var(--encre-tenue);
+}
+/* L'aperçu dit ce que le bouton va faire. C'est la pièce qui manquait :
+   un formulaire dont on doit deviner le résultat n'est pas compris, et on
+   finit par ne plus s'en servir. */
+.admin .apercu {
+  margin: var(--e3) 0 0; padding: 11px 13px; border-radius: var(--r-champ);
+  background: rgba(44, 127, 85, 0.09); color: var(--vert-fonce);
+  font-family: var(--mono); font-size: 0.82rem; line-height: 1.6;
+  font-variant-numeric: tabular-nums lining-nums; overflow-wrap: anywhere;
+}
+.admin .apercu:empty { display: none; }
+
+.admin .repli { margin-top: var(--e4); border-top: 1px solid var(--bord); padding-top: var(--e3); }
+.admin .repli > summary {
+  cursor: pointer; list-style: none; font-family: var(--ui); font-size: 0.82rem;
+  font-weight: 560; color: var(--encre-tenue); padding: 4px 0;
+}
+.admin .repli > summary::-webkit-details-marker { display: none; }
+.admin .repli > summary::before { content: "+ "; }
+.admin .repli[open] > summary::before { content: "− "; }
+.admin .repli > summary:hover { color: var(--encre); }
+.admin .repli label { display: block; margin: var(--e3) 0 5px; }
+
+/* Une plage de la journée. Le bouton de retrait n'apparaît que s'il y a
+   plus d'une ligne : retirer la seule plage ne veut rien dire. */
+.admin .plage-jour {
+  display: grid; gap: 10px; align-items: end; margin-top: var(--e3);
+  grid-template-columns: 1fr 1fr;
+}
+@media (min-width: 620px) { .admin .plage-jour { grid-template-columns: 1fr 1fr 1.3fr auto; } }
+.admin .plage-jour label { display: grid; gap: 5px; margin: 0; }
+.admin .plage-jour label > span {
+  font-family: var(--ui); font-size: 0.78rem; font-weight: 560; color: var(--encre-tenue);
+}
+.admin .plage-jour__retirer {
+  grid-column: 1 / -1; justify-self: end;
+  width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--bord-fort); background: var(--surface-pleine);
+  color: var(--encre-tenue); font-size: 18px; line-height: 1;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+@media (min-width: 620px) { .admin .plage-jour__retirer { grid-column: auto; } }
+.admin .plage-jour__retirer:hover {
+  background: var(--rouge-voile); border-color: var(--rouge); color: var(--rouge-texte);
+}
+.admin .plage-jour:only-child .plage-jour__retirer { display: none; }
+
+/* Le « + » collé au sélecteur de lieu. */
+.admin .champ-plus { display: flex; gap: 8px; align-items: stretch; }
+.admin .champ-plus select { flex: 1; min-width: 0; }
+.admin .champ-plus__bouton {
+  flex: none; width: 46px; border-radius: var(--r-champ); cursor: pointer;
+  border: 1px solid var(--bord-fort); background: var(--surface-pleine);
+  color: var(--encre-douce); font-size: 19px; line-height: 1; font-weight: 400;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.admin .champ-plus__bouton:hover { background: var(--vert); border-color: var(--vert); color: #fff; }
+
+.admin .lieu-express {
+  margin-top: var(--e3); padding: 14px; border-radius: var(--r-champ);
+  background: var(--surface-creuse); border: 1px dashed var(--bord-fort);
+}
+.admin .lieu-express .reglage-grille { margin-top: 0; }
+.admin .lieu-express__actions { display: flex; gap: 8px; margin: var(--e3) 0 0; }

@@ -48,7 +48,17 @@
 
       <div data-message hidden></div>
 
-      <!-- Ouvrir une journée -->
+      <!-- ================================================================
+           Ouvrir une journée.
+
+           Une seule façon de saisir : une plage horaire, comme Nils la dit
+           — « jeudi je suis libre de 10 h à 15 h ». Un aperçu montre les
+           créneaux produits avant de valider, pour qu'on n'ait jamais à
+           deviner ce que le formulaire va faire.
+
+           La saisie libre reste possible, repliée, pour le cas rare d'une
+           journée aux horaires irréguliers.
+           ================================================================ -->
       <div class="nouvelle">
         <p class="tech" style="margin-bottom:var(--e3)">Ouvrir une journée</p>
         <form data-nouvelle novalidate>
@@ -59,48 +69,60 @@
             </div>
             <div>
               <label for="lieu">Lieu</label>
-              <select id="lieu" name="lieu" required data-lieux></select>
+              <div class="champ-plus">
+                <select id="lieu" name="lieu" required data-lieux></select>
+                <button class="champ-plus__bouton" type="button" data-lieu-plus
+                  aria-label="Ajouter un lieu" title="Ajouter un lieu">+</button>
+              </div>
             </div>
           </div>
 
-          <div style="margin-top:var(--e3)">
-            <label for="horaires">Horaires</label>
-            <input type="text" id="horaires" name="horaires" inputmode="text"
-              placeholder="9h  10h  11h30  14h  16h30" autocomplete="off">
-            <p class="champ__aide" style="margin-top:6px">
-              Séparez par un espace ou une virgule. « 9 », « 9h », « 9h30 » et « 930 » sont compris.
+          <!-- Créer un lieu sans quitter le formulaire : Nils découvre une
+               nouvelle structure le jour où il y donne son premier cours,
+               pas la veille en réglant son admin. -->
+          <div class="lieu-express" data-lieu-express hidden>
+            <div class="reglage-grille">
+              <div>
+                <label for="lx-nom">Nom du lieu</label>
+                <input type="text" id="lx-nom" placeholder="Golf de Teynac" autocomplete="off">
+              </div>
+              <div>
+                <label for="lx-ville">Ville</label>
+                <input type="text" id="lx-ville" placeholder="Beychac-et-Caillau" autocomplete="off">
+              </div>
+            </div>
+            <p class="lieu-express__actions">
+              <button class="outil" type="button" data-lieu-creer>Créer ce lieu</button>
+              <button class="outil" type="button" data-lieu-annuler>Annuler</button>
             </p>
           </div>
 
-          <!-- Remplir une journée entière en un geste, plutôt que de taper
-               huit horaires l'un après l'autre sur un clavier de téléphone. -->
-          <div class="nouvelle__grille" style="margin-top:var(--e3)">
-            <div>
-              <label for="serie-debut">Série, de</label>
-              <input type="time" id="serie-debut" value="09:00">
-            </div>
-            <div>
-              <label for="serie-fin">jusqu'à</label>
-              <input type="time" id="serie-fin" value="17:00">
-            </div>
-            <div>
-              <label for="serie-pas">tous les</label>
-              <select id="serie-pas">
-                <option value="30">30 minutes</option>
-                <option value="45">45 minutes</option>
-                <option value="60" selected>1 heure</option>
-                <option value="90">1 h 30</option>
-                <option value="120">2 heures</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:flex-end">
-              <button class="bouton bouton--contour bouton--large" type="button" data-serie>Remplir</button>
-            </div>
-          </div>
+          <p class="nouvelle__intertitre">Je donne des cours</p>
+
+          <!-- Plusieurs plages par journée : une coupure déjeuner se dit
+               « de 10 h à 12 h, puis de 13 h à 17 h », pas autrement. -->
+          <div data-plages-jour></div>
+
+          <p style="margin:var(--e3) 0 0">
+            <button class="outil outil--doux" type="button" data-ajouter-plage>+ Ajouter une plage</button>
+          </p>
+
+          <p class="apercu" data-apercu></p>
 
           <p style="margin-top:var(--e4)">
             <button class="bouton bouton--plein bouton--large" type="submit">Ouvrir cette journée</button>
           </p>
+
+          <details class="repli">
+            <summary>Horaires irréguliers</summary>
+            <label for="horaires">Saisir les heures une par une</label>
+            <input type="text" id="horaires" name="horaires" inputmode="text"
+              placeholder="9h  10h30  14h  16h30" autocomplete="off">
+            <p class="champ__aide" style="margin-top:6px">
+              Séparées par un espace ou une virgule. Si ce champ est rempli,
+              c'est lui qui est utilisé, et la plage ci-dessus est ignorée.
+            </p>
+          </details>
         </form>
       </div>
 

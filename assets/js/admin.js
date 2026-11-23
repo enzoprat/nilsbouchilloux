@@ -151,24 +151,151 @@
   /* Une plage de disponibilité en liste d'horaires : « de 10 h à 15 h toutes
      les heures » donne 10:00, 11:00 … 15:00. Retourne null et prévient si la
      saisie n'a pas de sens, plutôt que de produire une liste absurde. */
-  function serie(debutBrut, finBrut, pas) {
+  function serie(debutBrut, finBrut, pas, muet) {
+    var plainte = function (t) { if (!muet) dire(t, true); return null; };
     var debut = normaliserHeure(debutBrut), fin = normaliserHeure(finBrut);
-    if (!debut || !fin) { dire("Indiquez un début et une fin.", true); return null; }
+    if (!debut || !fin) return plainte("Indiquez un début et une fin.");
     var m = function (h) { var p = h.split(":"); return +p[0] * 60 + +p[1]; };
     var debutM = m(debut), finM = m(fin);
-    if (finM <= debutM) { dire("La fin doit venir après le début.", true); return null; }
+    if (finM <= debutM) return plainte("La fin doit venir après le début.");
     if (!pas || pas < 5) pas = 60;
-    if ((finM - debutM) / pas > 40) { dire("Cela ferait plus de quarante créneaux.", true); return null; }
+    if ((finM - debutM) / pas > 40) return plainte("Cela ferait plus de quarante créneaux.");
     var sortie = [];
-    for (var t = debutM; t <= finM; t += pas) {
+    for (var t = debutM; t + pas <= finM; t += pas) {
       sortie.push(String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"));
     }
     return sortie;
   }
 
-  $("[data-serie]").addEventListener("click", function () {
-    var sortie = serie($("#serie-debut").value, $("#serie-fin").value, Number($("#serie-pas").value));
-    if (sortie) $("#horaires").value = sortie.join("  ");
+  /* ------------------------------------------------------- Plages du jour
+
+     Une journée se dit rarement d'un trait : « de 10 h à 12 h, puis de
+     13 h à 17 h » est la forme normale dès qu'il y a une coupure. On
+     empile donc des plages, et l'aperçu les fond en une seule liste
+     d'horaires, dédoublonnée et triée.
+     ---------------------------------------------------------------------- */
+  var DUREES = [[30, "30 minutes"], [45, "45 minutes"], [60, "1 heure"], [90, "1 h 30"], [120, "2 heures"]];
+
+  function ajouterPlageJour(debut, fin, pas) {
+    var hote = $("[data-plages-jour]");
+    var ligne = document.createElement("div");
+    ligne.className = "plage-jour";
+    ligne.innerHTML =
+      '<label><span>De</span><input type="time" data-debut value="' + (debut || "10:00") + '"></label>' +
+      '<label><span>à</span><input type="time" data-fin value="' + (fin || "15:00") + '"></label>' +
+      '<label><span>Durée d\u2019un cours</span><select data-pas>' +
+        DUREES.map(function (d) {
+          return '<option value="' + d[0] + '"' + (d[0] === (pas || 60) ? " selected" : "") + '>' + d[1] + '</option>';
+        }).join("") +
+      '</select></label>' +
+      '<button class="plage-jour__retirer" type="button" aria-label="Retirer cette plage">&times;</button>';
+
+    ligne.querySelector(".plage-jour__retirer").addEventListener("click", function () {
+      if (hote.children.length <= 1) { dire("Il faut au moins une plage.", true); return; }
+      ligne.remove(); majApercu();
+    });
+    ligne.querySelectorAll("input, select").forEach(function (e) {
+      e.addEventListener("input", majApercu);
+      e.addEventListener("change", majApercu);
+    });
+    hote.appendChild(ligne);
+    majApercu();
+  }
+
+  /* Toutes les plages fondues en une liste d'horaires. Deux plages qui se
+     chevauchent ne produisent pas deux fois la même heure. */
+  function horairesDuJour() {
+    var toutes = [], souci = null;
+    $("[data-plages-jour]").querySelectorAll(".plage-jour").forEach(function (l) {
+      var sortie = serie(l.querySelector("[data-debut]").value,
+                         l.querySelector("[data-fin]").value,
+                         Number(l.querySelector("[data-pas]").value), true);
+      if (!sortie) {
+        var d = l.querySelector("[data-debut]").value, f = l.querySelector("[data-fin]").value;
+        souci = (d && f) ? "Sur une plage, la fin ne vient pas après le début." :
+                           "Indiquez une heure de début et une heure de fin.";
+        return;
+      }
+      sortie.forEach(function (h) { if (toutes.indexOf(h) === -1) toutes.push(h); });
+    });
+    toutes.sort();
+    return { horaires: toutes, souci: souci };
+  }
+
+  function majApercu() {
+    var cible = $("[data-apercu]");
+    var libres = lireHoraires($("#horaires").value);
+    if (libres.bonnes.length) {
+      cible.textContent = libres.bonnes.length +
+        (libres.bonnes.length > 1 ? " créneaux : " : " créneau : ") + libres.bonnes.join(" · ");
+      return;
+    }
+    var lu = horairesDuJour();
+    if (lu.souci && !lu.horaires.length) { cible.textContent = lu.souci; return; }
+    cible.textContent = lu.horaires.length
+      ? lu.horaires.length + (lu.horaires.length > 1 ? " créneaux : " : " créneau : ") + lu.horaires.join(" · ")
+      : "Indiquez une heure de début et une heure de fin.";
+  }
+
+  $("[data-ajouter-plage]").addEventListener("click", function () {
+    var dernieres = $("[data-plages-jour]").querySelectorAll(".plage-jour");
+    var derniere = dernieres[dernieres.length - 1];
+    /* La plage suivante démarre une heure après la fin de la précédente :
+       c'est la coupure déjeuner dans la plupart des cas. */
+    var apres = derniere ? derniere.querySelector("[data-fin]").value : "13:00";
+    var h = normaliserHeure(apres);
+    var debut = h ? String(Math.min(23, +h.slice(0, 2) + 1)).padStart(2, "0") + ":" + h.slice(3) : "13:00";
+    var fin = String(Math.min(23, +debut.slice(0, 2) + 4)).padStart(2, "0") + ":" + debut.slice(3);
+    ajouterPlageJour(debut, fin, derniere ? Number(derniere.querySelector("[data-pas]").value) : 60);
+  });
+
+  $("#horaires").addEventListener("input", majApercu);
+  ajouterPlageJour("10:00", "15:00", 60);
+
+  /* ------------------------------------------------------- Lieu express
+
+     Le panneau « Mes lieux » existe plus bas, mais il est replié et loin.
+     Nils découvre une structure le jour où il y donne son premier cours :
+     il doit pouvoir la créer sans quitter le formulaire qu'il remplit. */
+  function basculerLieuExpress(ouvrir) {
+    $("[data-lieu-express]").hidden = !ouvrir;
+    $("[data-lieu-plus]").textContent = ouvrir ? "\u00d7" : "+";
+    $("[data-lieu-plus]").setAttribute("aria-label", ouvrir ? "Fermer" : "Ajouter un lieu");
+    if (ouvrir) $("#lx-nom").focus();
+  }
+
+  $("[data-lieu-plus]").addEventListener("click", function () {
+    basculerLieuExpress($("[data-lieu-express]").hidden);
+  });
+  $("[data-lieu-annuler]").addEventListener("click", function () {
+    $("#lx-nom").value = ""; $("#lx-ville").value = "";
+    basculerLieuExpress(false);
+  });
+
+  $("[data-lieu-creer]").addEventListener("click", function () {
+    var nom = $("#lx-nom").value.trim(), ville = $("#lx-ville").value.trim();
+    if (nom.length < 2 || ville.length < 2) { dire("Il faut un nom et une ville.", true); return; }
+    /* La teinte alterne : deux lieux voisins ne doivent pas porter le même
+       repère de couleur sur la page de réservation. */
+    var teinte = (etat.tousLieux.filter(function (l) { return l.teinte === "vert"; }).length >
+                  etat.tousLieux.filter(function (l) { return l.teinte === "sable"; }).length)
+      ? "sable" : "vert";
+    appeler("/api/admin/lieux", {
+      method: "POST", body: JSON.stringify({ libelle: nom, ville: ville, teinte: teinte })
+    }).then(function (r) {
+      if (gererSession(r)) return;
+      if (!r.ok) { dire(messageErreur(r, "Lieu non créé."), true); return; }
+      var code = r.corps.lieu.code;
+      $("#lx-nom").value = ""; $("#lx-ville").value = "";
+      basculerLieuExpress(false);
+      dire("« " + r.corps.lieu.libelle + " » ajouté et sélectionné.");
+      /* On recharge, puis on sélectionne le lieu tout juste créé. */
+      Promise.all([appeler("/api/admin/lieux"), appeler("/api/admin/semaine")]).then(function (rr) {
+        if (rr[0].ok) { etat.tousLieux = rr[0].corps.lieux || []; rendreLieux(); remplirLieux(); }
+        if (rr[1].ok) remplirPlageLieux(rr[1].corps.lieux || []);
+        vues.lieux.value = code;
+      });
+    });
   });
 
   /* ---------------------------------------------------- Ouvrir une journée */
@@ -184,6 +311,13 @@
       dire("Horaire non compris : " + horaires.mauvaises.join(", ") + ".", true);
       return;
     }
+    /* Sans saisie libre, c'est la plage qui fait foi. */
+    if (!horaires.bonnes.length) {
+      var lu = horairesDuJour();
+      if (!lu.horaires.length) { dire(lu.souci || "Indiquez au moins une plage.", true); return; }
+      if (lu.souci) { dire(lu.souci, true); return; }
+      horaires = { bonnes: lu.horaires, mauvaises: [] };
+    }
 
     var bouton = vues.nouvelle.querySelector('button[type="submit"]');
     bouton.disabled = true;
@@ -198,6 +332,7 @@
       if (gererSession(r)) return;
       if (!r.ok) { dire((r.corps && r.corps.message) || "Échec de l'enregistrement.", true); return; }
       $("#horaires").value = "";
+      majApercu();
       dire(horaires.bonnes.length
         ? "Journée ouverte, " + horaires.bonnes.length + " créneaux en ligne."
         : "Journée ouverte. Ajoutez-lui des horaires.");
@@ -905,6 +1040,8 @@
   $("#date").min = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit"
   }).format(demain);
+
+  majApercu();
 
   appeler("/api/admin/session").then(function (r) {
     if (r.ok && r.corps && r.corps.connecte) montrerEspace();
